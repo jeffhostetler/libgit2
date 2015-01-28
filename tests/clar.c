@@ -87,6 +87,7 @@
 #endif
 
 #include "clar.h"
+#include "clar_libgit2_trace.h"
 
 static void fs_rm(const char *_source);
 static void fs_copy(const char *_source, const char *dest);
@@ -190,6 +191,10 @@ clar_run_test(
 {
 	_clar.test_status = CL_TEST_OK;
 	_clar.trampoline_enabled = 1;
+
+#if defined(GIT_TRACE)
+	cl_maybe_enable_trace(test->name);
+#endif
 
 	if (setjmp(_clar.trampoline) == 0) {
 		if (initialize->ptr != NULL)
