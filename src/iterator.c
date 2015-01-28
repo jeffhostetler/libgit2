@@ -154,6 +154,10 @@ int git_iterator_for_nothing(
 {
 	empty_iterator *i = git__calloc(1, sizeof(empty_iterator));
 	GITERR_CHECK_ALLOC(i);
+	git_trace(GIT_TRACE_TRACE, "git_iterator_for_nothing: [iter %p] [flags 0x%08lx] '%s' '%s'",
+			  i, flags,
+			  ((start) ? start : "(nil)"),
+			  ((end) ? end : "(nil)"));
 
 #define empty_iterator__current empty_iterator__noop
 #define empty_iterator__advance empty_iterator__noop
@@ -619,6 +623,10 @@ int git_iterator_for_tree(
 
 	ti = git__calloc(1, sizeof(tree_iterator));
 	GITERR_CHECK_ALLOC(ti);
+	git_trace(GIT_TRACE_TRACE, "git_iterator_for_tree: [iter %p] [flags 0x%08lx] '%s' '%s'",
+			  ti, flags,
+			  ((start) ? start : "(nil)"),
+			  ((end) ? end : "(nil)"));
 
 	ITERATOR_BASE_INIT(ti, tree, TREE, git_tree_owner(tree));
 
@@ -861,6 +869,10 @@ int git_iterator_for_index(
 	int error = 0;
 	index_iterator *ii = git__calloc(1, sizeof(index_iterator));
 	GITERR_CHECK_ALLOC(ii);
+	git_trace(GIT_TRACE_TRACE, "git_iterator_for_index: [iter %p] [flags 0x%08lx] '%s' '%s'",
+			  ii, flags,
+			  ((start) ? start : "(nil)"),
+			  ((end) ? end : "(nil)"));
 
 	if ((error = git_index_snapshot_new(&ii->entries, index)) < 0) {
 		git__free(ii);
@@ -1254,6 +1266,10 @@ int git_iterator_for_filesystem(
 {
 	fs_iterator *fi = git__calloc(1, sizeof(fs_iterator));
 	GITERR_CHECK_ALLOC(fi);
+	git_trace(GIT_TRACE_TRACE, "git_iterator_for_filesystem: [iter %p] [flags 0x%08lx] '%s' '%s'",
+			  fi, flags,
+			  ((start) ? start : "(nil)"),
+			  ((end) ? end : "(nil)"));
 
 	ITERATOR_BASE_INIT(fi, fs, FS, NULL);
 
@@ -1445,6 +1461,10 @@ int git_iterator_for_workdir_ext(
 	/* initialize as an fs iterator then do overrides */
 	wi = git__calloc(1, sizeof(workdir_iterator));
 	GITERR_CHECK_ALLOC(wi);
+	git_trace(GIT_TRACE_TRACE, "git_iterator_for_workdir_ext: [iter %p] [flags 0x%08lx] '%s' '%s'",
+			  wi, flags,
+			  ((start) ? start : "(nil)"),
+			  ((end) ? end : "(nil)"));
 	ITERATOR_BASE_INIT((&wi->fi), fs, FS, repo);
 
 	wi->fi.base.type = GIT_ITERATOR_TYPE_WORKDIR;
@@ -1486,6 +1506,7 @@ void git_iterator_free(git_iterator *iter)
 {
 	if (iter == NULL)
 		return;
+	git_trace(GIT_TRACE_TRACE, "git_iterator_free: [iter %p]", iter);
 
 	iter->cb->free(iter);
 
@@ -1500,6 +1521,9 @@ void git_iterator_free(git_iterator *iter)
 int git_iterator_set_ignore_case(git_iterator *iter, bool ignore_case)
 {
 	bool desire_ignore_case  = (ignore_case != 0);
+
+	git_trace(GIT_TRACE_TRACE, "git_iterator_set_ignore_case: [iter %p] [was %d][new %d]",
+			  iter, iterator__ignore_case(iter), desire_ignore_case);
 
 	if (iterator__ignore_case(iter) == desire_ignore_case)
 		return 0;
