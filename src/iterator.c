@@ -1596,6 +1596,10 @@ static int indexfilelist_iterator__reset(
 	/* We lookup the starting and ending paths in the filelist
 	 * rather than the index.  This gives us the bounds on set
 	 * of possible paths we will return during the iteration.
+	 *
+	 * For the "end" string, we want it to be included in the
+	 * set of paths enumerated (unlike the STL).  We set the
+	 * "pos_filelist_end" to be just past it (like the STL).
 	 */
 
 	ifi->pos_filelist_start = 0;
@@ -1603,11 +1607,9 @@ static int indexfilelist_iterator__reset(
 		git_vector_bsearch(&ifi->pos_filelist_start, &ifi->filelist, ifi->base.start);
 
 	ifi->pos_filelist_end = git_vector_length(&ifi->filelist);
-	if (ifi->base.end) {
-		size_t pos_last;
-		git_vector_bsearch(&pos_last, &ifi->filelist, ifi->base.end);
-		ifi->pos_filelist_end = pos_last + 1; /* STL-style position value */
-	}
+	if (ifi->base.end)
+		if (git_vector_bsearch(&ifi->pos_filelist_end, &ifi->filelist, ifi->base.end) == 0)
+			ifi->pos_filelist_end++;
 
 	sz_filelist_start = git_vector_get(&ifi->filelist, ifi->pos_filelist_start);
 	git_trace(GIT_TRACE_TRACE, "indexfilelist:reset [start '%s'] -> [%d,'%s']",
@@ -1690,6 +1692,12 @@ int git_iterator_for_indexfilelist(
 		git__strcasecmp : git__strcmp)) < 0)
 		goto done;
 	git_vector_sort(&ifi->filelist);
+	{
+		size_t k;
+		for (k=0; k < git_vector_length(&ifi->filelist); k++)
+			git_trace(GIT_TRACE_TRACE, "setup: [iter %p] k[%3d] '%s'",
+					  ifi, (int)k, git_vector_get(&ifi->filelist, k));
+	}
 
 	indexfilelist_iterator__reset((git_iterator *)ifi, NULL, NULL);
 
