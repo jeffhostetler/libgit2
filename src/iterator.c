@@ -1502,6 +1502,212 @@ int git_iterator_for_workdir_ext(
 }
 
 
+typedef struct {
+	git_iterator base;
+	git_iterator_callbacks cb;
+	git_index *index;
+	git_vector entries;
+	git_vector_cmp entry_srch;
+	git_vector filelist;
+	size_t pos_filelist_start;
+	size_t pos_filelist_end;
+	size_t pos_filelist_current;
+	size_t pos_index;
+	
+} indexfilelist_iterator;
+
+/* The "end" string should be included in the enumeration,
+ * so we set the "pos_filelist_end" value just past its
+ * position (in STL style).
+ */
+static int indexfilelist_iterator__at_end(git_iterator *self)
+{
+	indexfilelist_iterator *ifi = (indexfilelist_iterator *)self;
+	return (ifi->pos_filelist_current >= ifi->pos_filelist_end);
+}
+
+static int indexfilelist_iterator__current(
+	const git_index_entry **entry, git_iterator *self)
+{
+	indexfilelist_iterator *ifi = (indexfilelist_iterator *)self;
+
+	iterator__clear_entry(entry);
+
+	if (indexfilelist_iterator__at_end(self))
+		return GIT_ITEROVER;
+
+	if (entry)
+		*entry = git_vector_get(&ifi->entries, ifi->pos_index);
+
+	ifi->base.flags |= GIT_ITERATOR_FIRST_ACCESS;
+	return 0;
+}
+
+static int indexfilelist_iterator__advance(
+	const git_index_entry **entry, git_iterator *self)
+{
+	indexfilelist_iterator *ifi = (indexfilelist_iterator *)self;
+
+	if (!iterator__has_been_accessed(ifi))
+		return indexfilelist_iterator__current(entry, self);
+
+	ifi->pos_filelist_current++;
+
+	while (!indexfilelist_iterator__at_end(self)) {
+		const char *sz = git_vector_get(&ifi->filelist, ifi->pos_filelist_current);
+		if (git_index_snapshot_find(&ifi->pos_index, &ifi->entries, ifi->entry_srch, sz, 0, 0) == 0) {
+			git_trace(GIT_TRACE_TRACE, "indexfilelist:advance [matched '%s'] at [%d/%d]",
+					  sz, (int)ifi->pos_index, (int)git_vector_length(&ifi->entries));
+			break;
+		}
+		git_trace(GIT_TRACE_TRACE, "indexfilelist:advance [not matched '%s']", sz);
+		ifi->pos_filelist_current++;
+	}
+	return indexfilelist_iterator__current(entry, self);
+}
+
+static int indexfilelist_iterator__advance_into(
+	git_iterator *self, const char *prefix)
+{
+	/* not needed since we don't present a diving/treewalk concept. */
+	GIT_UNUSED(self); GIT_UNUSED(prefix);
+	return -1;
+}
+
+static int indexfilelist_iterator__seek(
+	git_iterator *self, const char *prefix)
+{
+	GIT_UNUSED(self); GIT_UNUSED(prefix);
+	return -1;
+}
+
+#define SZORNIL(sz) ((sz) ? (sz) : "(nil)")
+
+static int indexfilelist_iterator__reset(
+	git_iterator *self, const char *start, const char *end)
+{
+	indexfilelist_iterator *ifi = (indexfilelist_iterator *)self;
+	const char *sz_filelist_start = NULL;
+	const char *sz_filelist_last = NULL;
+
+	if (iterator__reset_range(self, start, end) < 0)
+		return -1;
+
+	/* We lookup the starting and ending paths in the filelist
+	 * rather than the index.  This gives us the bounds on set
+	 * of possible paths we will return during the iteration.
+	 */
+
+	ifi->pos_filelist_start = 0;
+	if (ifi->base.start)
+		git_vector_bsearch(&ifi->pos_filelist_start, &ifi->filelist, ifi->base.start);
+
+	ifi->pos_filelist_end = git_vector_length(&ifi->filelist);
+	if (ifi->base.end) {
+		size_t pos_last;
+		git_vector_bsearch(&pos_last, &ifi->filelist, ifi->base.end);
+		ifi->pos_filelist_end = pos_last + 1; /* STL-style position value */
+	}
+
+	sz_filelist_start = git_vector_get(&ifi->filelist, ifi->pos_filelist_start);
+	git_trace(GIT_TRACE_TRACE, "indexfilelist:reset [start '%s'] -> [%d,'%s']",
+			  ifi->base.start, (int)ifi->pos_filelist_start, SZORNIL(sz_filelist_start));
+	sz_filelist_last = git_vector_get(&ifi->filelist, (ifi->pos_filelist_end - 1));
+	git_trace(GIT_TRACE_TRACE, "indexfilelist:reset [end '%s'] -> [%d,'%s']",
+			  ifi->base.end, (int)(ifi->pos_filelist_end - 1), SZORNIL(sz_filelist_last));
+
+	/* Seed "current" with the first item in both the filelist and the index. */
+	/* Skip unmatched items in filelist. */
+
+	ifi->pos_filelist_current = ifi->pos_filelist_start;
+	while (!indexfilelist_iterator__at_end(self)) {
+		const char *sz = git_vector_get(&ifi->filelist, ifi->pos_filelist_current);
+		if (git_index_snapshot_find(&ifi->pos_index, &ifi->entries, ifi->entry_srch, sz, 0, 0) == 0) {
+			git_trace(GIT_TRACE_TRACE, "indexfilelist:reset [matched '%s'] at [%d/%d]",
+					  sz, (int)ifi->pos_index, (int)git_vector_length(&ifi->entries));
+			break;
+		}
+		git_trace(GIT_TRACE_TRACE, "indexfilelist:reset [not matched '%s']", sz);
+		ifi->pos_filelist_current++;
+	}
+	return (indexfilelist_iterator__at_end(self) ? GIT_ITEROVER : 0);
+}
+
+static void indexfilelist_iterator__free(git_iterator *self)
+{
+	indexfilelist_iterator *ifi = (indexfilelist_iterator *)self;
+	git_index_snapshot_release(&ifi->entries, ifi->index);
+	ifi->index = NULL;
+	git_vector_free(&ifi->filelist);
+}
+
+int git_iterator_for_indexfilelist(
+	git_iterator **iter,
+	git_index *index,
+	git_vector *filelist,
+	git_iterator_flag_t flags,
+	const char *start,
+	const char *end)
+{
+	int error = 0;
+	indexfilelist_iterator *ifi = NULL;
+
+	assert(filelist && (git_vector_length(filelist) > 0));
+
+	/* This iterator only returns items from the filelist
+	 * that happen to appear in the index, so we don't do
+	 * any of these variations.
+	 */
+	assert((flags & GIT_ITERATOR_INCLUDE_TREES) == 0);
+	assert((flags & GIT_ITERATOR_DONT_AUTOEXPAND) == 0);
+	assert((flags & GIT_ITERATOR_PRECOMPOSE_UNICODE) == 0);
+
+	ifi = git__calloc(1, sizeof(indexfilelist_iterator));
+	GITERR_CHECK_ALLOC(ifi);
+	git_trace(GIT_TRACE_TRACE, "git_iterator_for_indexfilelist: [iter %p] [flags 0x%08lx] '%s' '%s'",
+			  ifi, flags,
+			  ((start) ? start : "(nil)"),
+			  ((end) ? end : "(nil)"));
+
+	ITERATOR_BASE_INIT(ifi, indexfilelist, INDEXFILELIST, git_index_owner(index));
+	if ((error = iterator__update_ignore_case((git_iterator *)ifi, flags)) < 0)
+		goto done;
+
+	ifi->entry_srch = iterator__ignore_case(ifi) ?
+		git_index_entry_isrch : git_index_entry_srch;
+
+	/* Snapshot the current index and sort the entries as requested. */
+	ifi->index = index;
+	if ((error = git_index_snapshot_new(&ifi->entries, index)) < 0)
+		goto done;
+	git_vector_set_cmp(&ifi->entries, iterator__ignore_case(ifi) ?
+		git_index_entry_icmp : git_index_entry_cmp);
+	git_vector_sort(&ifi->entries);
+
+	/* Cache a copy of the given filelist and sort it as requested. */
+	/* TODO Should we use git_pool and make a deep copy of the paths? */
+	if ((error = git_vector_dup(&ifi->filelist, filelist, iterator__ignore_case(ifi)?
+		git__strcasecmp : git__strcmp)) < 0)
+		goto done;
+	git_vector_sort(&ifi->filelist);
+
+	indexfilelist_iterator__reset((git_iterator *)ifi, NULL, NULL);
+
+	*iter = (git_iterator *)ifi;
+	return 0;
+
+done:
+	/* TODO release snapshot? */
+	git_iterator_free((git_iterator *)ifi);
+	return -1;
+}
+
+
+
+
+
+
+
 void git_iterator_free(git_iterator *iter)
 {
 	if (iter == NULL)

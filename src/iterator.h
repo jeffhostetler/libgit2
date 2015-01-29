@@ -21,6 +21,7 @@ typedef enum {
 	GIT_ITERATOR_TYPE_INDEX = 2,
 	GIT_ITERATOR_TYPE_WORKDIR = 3,
 	GIT_ITERATOR_TYPE_FS = 4,
+	GIT_ITERATOR_TYPE_INDEXFILELIST = 5,
 } git_iterator_type_t;
 
 typedef enum {
@@ -114,6 +115,15 @@ GIT_INLINE(int) git_iterator_for_workdir(
 extern int git_iterator_for_filesystem(
 	git_iterator **out,
 	const char *root,
+	git_iterator_flag_t flags,
+	const char *start,
+	const char *end);
+
+/* Iterates over the given filelist and enumerate the entries that are in the index. */
+int git_iterator_for_indexfilelist(
+	git_iterator **iter,
+	git_index *index,
+	git_vector *filelist,
 	git_iterator_flag_t flags,
 	const char *start,
 	const char *end);

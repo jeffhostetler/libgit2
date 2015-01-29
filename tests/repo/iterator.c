@@ -992,3 +992,38 @@ void test_repo_iterator__skips_fifos_and_such(void)
 	git_iterator_free(i);
 #endif
 }
+
+void test_repo_iterator__indexfilelist(void)
+{
+	git_iterator *i;
+	git_index *index;
+	git_vector filelist;
+
+	g_repo = cl_git_sandbox_init("icase");
+
+	cl_git_pass(git_repository_index(&index, g_repo));
+
+	cl_git_pass(git_vector_init(&filelist, 100, &git__strcmp_cb));
+	cl_git_pass(git_vector_insert(&filelist, "a"));
+	cl_git_pass(git_vector_insert(&filelist, "B"));
+	cl_git_pass(git_vector_insert(&filelist, "c"));
+	cl_git_pass(git_vector_insert(&filelist, "D"));
+	cl_git_pass(git_vector_insert(&filelist, "e"));
+	cl_git_pass(git_vector_insert(&filelist, "k/1"));
+	cl_git_pass(git_vector_insert(&filelist, "k/a"));
+	cl_git_pass(git_vector_insert(&filelist, "L/1"));
+
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, NULL, NULL));
+	expect_iterator_items(i, 8, NULL, 8, NULL);
+	git_iterator_free(i);
+
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, "c", NULL));
+	expect_iterator_items(i, 6, NULL, 6, NULL);
+	git_iterator_free(i);
+
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, NULL, "e"));
+	expect_iterator_items(i, 5, NULL, 5, NULL);
+	git_iterator_free(i);
+
+	git_index_free(index);
+}
