@@ -28,6 +28,7 @@
 #include "config.h"
 #include "oidarray.h"
 #include "annotated_commit.h"
+#include "trace.h"
 
 #include "git2/types.h"
 #include "git2/repository.h"
@@ -1765,6 +1766,8 @@ int git_merge_trees(
 
 	assert(out && repo && (our_tree || their_tree));
 
+	git_trace(GIT_TRACE_TRACE,"git_merge_trees: Begin");
+
 	*out = NULL;
 
 	GITERR_CHECK_VERSION(given_opts, GIT_MERGE_OPTIONS_VERSION, "git_merge_options");
@@ -1799,6 +1802,7 @@ int git_merge_trees(
 
 done:
 	git_merge_diff_list__free(diff_list);
+	git_trace(GIT_TRACE_TRACE,"git_merge_trees: End");
 
 	return error;
 }
@@ -2328,6 +2332,8 @@ static int merge_check_index(size_t *conflicts, git_repository *repo, git_index 
 
 	GIT_UNUSED(merged_paths);
 
+	git_trace(GIT_TRACE_TRACE, "merge_check_index: Begin");
+
 	*conflicts = 0;
 
 	/* No staged changes may exist unless the change staged is identical to
@@ -2359,6 +2365,8 @@ static int merge_check_index(size_t *conflicts, git_repository *repo, git_index 
 	*conflicts = index_diff_list->deltas.length;
 
 done:
+	git_trace(GIT_TRACE_TRACE, "merge_check_index: End");
+
 	git_tree_free(head_tree);
 	git_index_free(index_repo);
 	git_iterator_free(iter_repo);
@@ -2377,6 +2385,8 @@ static int merge_check_workdir(size_t *conflicts, git_repository *repo, git_inde
 	int error = 0;
 
 	GIT_UNUSED(index_new);
+
+	git_trace(GIT_TRACE_TRACE, "merge_check_workdir: Begin");
 
 	*conflicts = 0;
 
@@ -2405,6 +2415,8 @@ static int merge_check_workdir(size_t *conflicts, git_repository *repo, git_inde
 	*conflicts = wd_diff_list->deltas.length;
 
 done:
+	git_trace(GIT_TRACE_TRACE, "merge_check_workdir: End");
+
 	git_diff_free(wd_diff_list);
 
 	return error;
@@ -2422,11 +2434,16 @@ int git_merge__check_result(git_repository *repo, git_index *index_new)
 	const git_index_entry *e;
 	int error = 0;
 
+	git_trace(GIT_TRACE_TRACE, "git_merge__check_result: Begin");
+
 	if ((error = git_repository_head_tree(&head_tree, repo)) < 0 ||
 		(error = git_iterator_for_tree(&iter_head, head_tree, GIT_ITERATOR_DONT_IGNORE_CASE, NULL, NULL)) < 0 ||
 		(error = git_iterator_for_index(&iter_new, index_new, GIT_ITERATOR_DONT_IGNORE_CASE, NULL, NULL)) < 0 ||
 		(error = git_diff__from_iterators(&merged_list, repo, iter_head, iter_new, &opts)) < 0)
 		goto done;
+
+	git_trace(GIT_TRACE_TRACE, "git_merge__check_result: Initial tree/index Diff [delta length %d]",
+			  (int)merged_list->deltas.length);
 
 	git_vector_foreach(&merged_list->deltas, i, delta) {
 		if ((error = git_vector_insert(&paths, (char *)delta->new_file.path)) < 0)
@@ -2436,6 +2453,8 @@ int git_merge__check_result(git_repository *repo, git_index *index_new)
 	for (i = 0; i < git_index_entrycount(index_new); i++) {
 		e = git_index_get_byindex(index_new, i);
 
+		/* TODO (git_vector_last(&paths) == 0) is just (paths.length == 0), right? */
+
 		if (git_index_entry_stage(e) != 0 &&
 			(git_vector_last(&paths) == NULL ||
 			strcmp(git_vector_last(&paths), e->path) != 0)) {
@@ -2444,6 +2463,9 @@ int git_merge__check_result(git_repository *repo, git_index *index_new)
 				goto done;
 		}
 	}
+
+	git_trace(GIT_TRACE_TRACE, "git_merge__check_result: Computed paths [length %d] [index %d]",
+			  (int)paths.length, (int)git_index_entrycount(index_new));
 
 	/* Make sure the index and workdir state do not prevent merging */
 	if ((error = merge_check_index(&index_conflicts, repo, index_new, &paths)) < 0 ||
@@ -2457,6 +2479,8 @@ int git_merge__check_result(git_repository *repo, git_index *index_new)
 	}
 
 done:
+	git_trace(GIT_TRACE_TRACE, "git_merge__check_result: End");
+
 	git_vector_free(&paths);
 	git_tree_free(head_tree);
 	git_iterator_free(iter_head);

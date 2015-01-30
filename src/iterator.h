@@ -22,6 +22,7 @@ typedef enum {
 	GIT_ITERATOR_TYPE_WORKDIR = 3,
 	GIT_ITERATOR_TYPE_FS = 4,
 	GIT_ITERATOR_TYPE_INDEXFILELIST = 5,
+	GIT_ITERATOR_TYPE_WORKDIRFILELIST = 6,
 } git_iterator_type_t;
 
 typedef enum {

@@ -28,6 +28,7 @@
 #include "buf_text.h"
 #include "merge_file.h"
 #include "path.h"
+#include "trace.h"
 
 /* See docs/checkout-internals.md for more information */
 
@@ -2471,11 +2472,17 @@ int git_checkout_tree(
 		}
 	}
 
+	git_trace(GIT_TRACE_TRACE, "git_checkout_tree: Begin(%s)",
+			  repo->workdir);
+
 	if ((error = git_repository_index(&index, repo)) < 0)
 		return error;
 
 	if (!(error = git_iterator_for_tree(&tree_i, tree, GIT_ITERATOR_DONT_IGNORE_CASE, NULL, NULL)))
 		error = git_checkout_iterator(tree_i, index, opts);
+
+	git_trace(GIT_TRACE_TRACE, "git_checkout_tree: End(%s)",
+			  repo->workdir);
 
 	git_iterator_free(tree_i);
 	git_index_free(index);

@@ -532,3 +532,4 @@ void cl_sandbox_set_search_path_defaults(void)
 	git_libgit2_opts(
 		GIT_OPT_SET_SEARCH_PATH, GIT_CONFIG_LEVEL_SYSTEM, sandbox_path);
 }
+

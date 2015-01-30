@@ -14,6 +14,7 @@
 #include "index.h"
 #include "odb.h"
 #include "submodule.h"
+#include "trace.h"
 
 #define DIFF_FLAG_IS_SET(DIFF,FLAG) (((DIFF)->opts.flags & (FLAG)) != 0)
 #define DIFF_FLAG_ISNT_SET(DIFF,FLAG) (((DIFF)->opts.flags & (FLAG)) == 0)
@@ -96,6 +97,12 @@ static int diff_delta__from_one(
 	if (status == GIT_DELTA_UNREADABLE &&
 		DIFF_FLAG_ISNT_SET(diff, GIT_DIFF_INCLUDE_UNREADABLE))
 		return 0;
+
+	git_trace(GIT_TRACE_TRACE, "diff_delta__from_one: [count pathspecs %d] 0x%lx 0x%lx %s",
+			  diff->pathspec.length,
+			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_DISABLE_PATHSPEC_MATCH),
+			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_IGNORE_CASE),
+			  entry->path);
 
 	if (!git_pathspec__match(
 			&diff->pathspec, entry->path,
@@ -402,6 +409,8 @@ static int diff_list_apply_options(
 		DIFF_FLAG_SET(diff, GIT_DIFF_IGNORE_CASE, icase);
 
 		/* initialize pathspec from options */
+		git_trace(GIT_TRACE_TRACE, "diff_list_apply_options: [count pathspec %d]",
+				  opts->pathspec.count);
 		if (git_pathspec__vinit(&diff->pathspec, &opts->pathspec, pool) < 0)
 			return -1;
 	}
@@ -710,6 +719,12 @@ static int maybe_modified(
 	bool modified_uncertain = false;
 	const char *matched_pathspec;
 	int error = 0;
+
+	git_trace(GIT_TRACE_TRACE, "maybe_modified: [count pathspecs %d] 0x%lx 0x%lx %s",
+			  diff->pathspec.length,
+			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_DISABLE_PATHSPEC_MATCH),
+			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_IGNORE_CASE),
+			  oitem->path);
 
 	if (!git_pathspec__match(
 			&diff->pathspec, oitem->path,
@@ -1141,6 +1156,12 @@ int git_diff_tree_to_tree(
 
 	assert(diff && repo);
 
+	git_trace(GIT_TRACE_TRACE, "git_diff_tree_to_tree: Begin(%p, %s, 0x%lx) [count pathspec %d]",
+			  repo,
+			  ((repo->workdir) ? repo->workdir : "(null)"),
+			  ((opts) ? (opts->flags) : 0),
+			  (int)opts->pathspec.count);
+
 	/* for tree to tree diff, be case sensitive even if the index is
 	 * currently case insensitive, unless the user explicitly asked
 	 * for case insensitivity
@@ -1208,6 +1229,10 @@ int git_diff_index_to_workdir(
 
 	assert(diff && repo);
 
+	git_trace(GIT_TRACE_TRACE, "git_diff_index_to_workdir: Begin(%p, %s, 0x%lx) [count pathspec %d]",
+			  repo, repo->workdir, ((opts) ? (opts->flags) : 0),
+			  (int)opts->pathspec.count);
+
 	if (!index && (error = diff_load_index(&index, repo)) < 0)
 		return error;
 
@@ -1220,6 +1245,9 @@ int git_diff_index_to_workdir(
 	if (!error && DIFF_FLAG_IS_SET(*diff, GIT_DIFF_UPDATE_INDEX))
 		error = git_index_write(index);
 
+	git_trace(GIT_TRACE_TRACE, "git_diff_index_to_workdir: End(%p, %s, 0x%lx)",
+			  repo, repo->workdir, ((opts) ? (opts->flags) : 0));
+	
 	return error;
 }
 

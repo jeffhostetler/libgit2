@@ -3,6 +3,7 @@
 #include "filebuf.h"
 #include "attr_file.h"
 #include "attrcache.h"
+#include "trace.h"
 #include "git2/blob.h"
 #include "git2/tree.h"
 #include "index.h"
@@ -126,6 +127,9 @@ int git_attr_file__load(
 	}
 	case GIT_ATTR_FILE__FROM_FILE: {
 		int fd;
+
+		git_trace(GIT_TRACE_TRACE, "git_attr_file__load: p_stat(%s)",
+				  entry->fullpath);
 
 		if (p_stat(entry->fullpath, &st) < 0)
 			return git_path_set_error(errno, entry->fullpath, "stat");

@@ -15,6 +15,7 @@
 #include "index.h"
 #include "bitvec.h"
 #include "diff.h"
+#include "trace.h"
 
 /* what is the common non-wildcard prefix for all items in the pathspec */
 char *git_pathspec_prefix(const git_strarray *pathspec)
@@ -69,6 +70,9 @@ int git_pathspec__vinit(
 	size_t i;
 
 	memset(vspec, 0, sizeof(*vspec));
+
+	git_trace(GIT_TRACE_TRACE, "git_pathspec__vinit: [count strspec %d]",
+			  strspec->count);
 
 	if (git_pathspec_is_empty(strspec))
 		return 0;
