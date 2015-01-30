@@ -128,9 +128,9 @@ int git_attr_file__load(
 	case GIT_ATTR_FILE__FROM_FILE: {
 		int fd;
 
-		git_trace(GIT_TRACE_TRACE, "git_attr_file__load: p_stat(%s)",
-				  entry->fullpath);
-
+#if 0
+		git_trace(GIT_TRACE_TRACE, "git_attr_file__load: p_stat(%s)", entry->fullpath);
+#endif
 		if (p_stat(entry->fullpath, &st) < 0)
 			return git_path_set_error(errno, entry->fullpath, "stat");
 		if (S_ISDIR(st.st_mode))
