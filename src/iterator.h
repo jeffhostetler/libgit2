@@ -129,6 +129,16 @@ int git_iterator_for_indexfilelist(
 	const char *start,
 	const char *end);
 
+/* Iterates over the given filelist and enumerate the entries that are in the workdir. */
+int git_iterator_for_workdirfilelist(
+	git_iterator **iter,
+	git_repository *repo,
+	const char *repo_workdir,
+	git_vector *filelist,
+	git_iterator_flag_t flags,
+	const char *start,
+	const char *end);
+
 extern void git_iterator_free(git_iterator *iter);
 
 /* Return a git_index_entry structure for the current value the iterator
