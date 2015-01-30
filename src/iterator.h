@@ -124,7 +124,7 @@ extern int git_iterator_for_filesystem(
 int git_iterator_for_indexfilelist(
 	git_iterator **iter,
 	git_index *index,
-	git_vector *filelist,
+	git_strarray *paths,
 	git_iterator_flag_t flags,
 	const char *start,
 	const char *end);
@@ -134,7 +134,7 @@ int git_iterator_for_workdirfilelist(
 	git_iterator **iter,
 	git_repository *repo,
 	const char *repo_workdir,
-	git_vector *filelist,
+	git_strarray *paths,
 	git_iterator_flag_t flags,
 	const char *start,
 	const char *end);

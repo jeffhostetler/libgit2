@@ -496,6 +496,7 @@ int git_status_file(
 		GIT_STATUS_OPT_RECURSE_UNTRACKED_DIRS |
 		GIT_STATUS_OPT_INCLUDE_UNMODIFIED |
 		GIT_STATUS_OPT_DISABLE_PATHSPEC_MATCH;
+	/* TODO ? Enable filelist match ? */
 	opts.pathspec.count = 1;
 	opts.pathspec.strings = &sfi.expected;
 

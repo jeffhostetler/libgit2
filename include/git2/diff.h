@@ -124,6 +124,13 @@ typedef enum {
 	/** Use case insensitive filename comparisons */
 	GIT_DIFF_IGNORE_CASE = (1u << 10),
 
+	/** TODO This is an extension of DISABLE_PATHSPEC_MATCH
+	 * to use git_iterator_for_{indexfilelist,workdirfilelist}
+	 * iterators when possible. The filelist given to these
+	 * routines should be a list of paths (no patterns).
+	 */
+	GIT_DIFF_ENABLE_FILELIST_MATCH = (1u << 11),
+
 	/** If the pathspec is set in the diff options, this flags means to
 	 *  apply it as an exact match instead of as an fnmatch pattern.
 	 */

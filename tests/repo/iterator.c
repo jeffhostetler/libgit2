@@ -998,6 +998,7 @@ void test_repo_iterator__indexfilelist(void)
 	git_iterator *i;
 	git_index *index;
 	git_vector filelist;
+	git_strarray paths;
 
 	cl_git_pass(git_vector_init(&filelist, 100, &git__strcmp_cb));
 	cl_git_pass(git_vector_insert(&filelist, "a"));
@@ -1008,6 +1009,8 @@ void test_repo_iterator__indexfilelist(void)
 	cl_git_pass(git_vector_insert(&filelist, "k/1"));
 	cl_git_pass(git_vector_insert(&filelist, "k/a"));
 	cl_git_pass(git_vector_insert(&filelist, "L/1"));
+	paths.count = filelist.length;
+	paths.strings = filelist.contents;
 
 	g_repo = cl_git_sandbox_init("icase");
 
@@ -1015,15 +1018,15 @@ void test_repo_iterator__indexfilelist(void)
 
 	/* All indexfilelist iterator tests are "autoexpand with no tree entries" */
 
-	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, NULL, NULL));
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &paths, 0, NULL, NULL));
 	expect_iterator_items(i, 8, NULL, 8, NULL);
 	git_iterator_free(i);
 
-	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, "c", NULL));
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &paths, 0, "c", NULL));
 	expect_iterator_items(i, 6, NULL, 6, NULL);
 	git_iterator_free(i);
 
-	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, NULL, "e"));
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &paths, 0, NULL, "e"));
 	expect_iterator_items(i, 5, NULL, 5, NULL);
 	git_iterator_free(i);
 
@@ -1037,6 +1040,7 @@ void test_repo_iterator__indexfilelist_icase(void)
 	git_index *index;
 	int caps;
 	git_vector filelist;
+	git_strarray paths;
 
 	cl_git_pass(git_vector_init(&filelist, 100, &git__strcmp_cb));
 	cl_git_pass(git_vector_insert(&filelist, "a"));
@@ -1047,6 +1051,8 @@ void test_repo_iterator__indexfilelist_icase(void)
 	cl_git_pass(git_vector_insert(&filelist, "k/1"));
 	cl_git_pass(git_vector_insert(&filelist, "k/a"));
 	cl_git_pass(git_vector_insert(&filelist, "L/1"));
+	paths.count = filelist.length;
+	paths.strings = filelist.contents;
 
 	g_repo = cl_git_sandbox_init("icase");
 
@@ -1058,22 +1064,22 @@ void test_repo_iterator__indexfilelist_icase(void)
 
 	/* All indexfilelist iterator tests are "autoexpand with no tree entries" */
 
-	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, "c", "k/D"));
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &paths, 0, "c", "k/D"));
 	expect_iterator_items(i, 3, NULL, 3, NULL);
 	git_iterator_free(i);
 
-	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, "k", "k/Z"));
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &paths, 0, "k", "k/Z"));
 	expect_iterator_items(i, 1, NULL, 1, NULL);
 	git_iterator_free(i);
 
 	/* force case insensitivity */
 	cl_git_pass(git_index_set_caps(index, caps | GIT_INDEXCAP_IGNORE_CASE));
 
-	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, "c", "k/D"));
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &paths, 0, "c", "k/D"));
 	expect_iterator_items(i, 5, NULL, 5, NULL);
 	git_iterator_free(i);
 
-	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &filelist, 0, "k", "k/Z"));
+	cl_git_pass(git_iterator_for_indexfilelist(&i, index, &paths, 0, "k", "k/Z"));
 	expect_iterator_items(i, 2, NULL, 2, NULL);
 	git_iterator_free(i);
 
@@ -1086,6 +1092,7 @@ void test_repo_iterator__workdirfilelist(void)
 {
 	git_iterator *i;
 	git_vector filelist;
+	git_strarray paths;
 
 	cl_git_pass(git_vector_init(&filelist, 100, &git__strcmp_cb));
 	cl_git_pass(git_vector_insert(&filelist, "a"));
@@ -1096,21 +1103,22 @@ void test_repo_iterator__workdirfilelist(void)
 	cl_git_pass(git_vector_insert(&filelist, "k/1"));
 	cl_git_pass(git_vector_insert(&filelist, "k/a"));
 	cl_git_pass(git_vector_insert(&filelist, "L/1"));
-
+	paths.count = filelist.length;
+	paths.strings = filelist.contents;
 
 	g_repo = cl_git_sandbox_init("icase");
 
 	/* All indexfilelist iterator tests are "autoexpand with no tree entries" */
 
-	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &filelist, 0, NULL, NULL));
+	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &paths, 0, NULL, NULL));
 	expect_iterator_items(i, 8, NULL, 8, NULL);
 	git_iterator_free(i);
 
-	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &filelist, 0, "c", NULL));
+	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &paths, 0, "c", NULL));
 	expect_iterator_items(i, 6, NULL, 6, NULL);
 	git_iterator_free(i);
 
-	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &filelist, 0, NULL, "e"));
+	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &paths, 0, NULL, "e"));
 	expect_iterator_items(i, 5, NULL, 5, NULL);
 	git_iterator_free(i);
 
@@ -1122,6 +1130,7 @@ void test_repo_iterator__workdirfilelist_icase(void)
 	git_iterator *i;
 	git_iterator_flag_t flag;
 	git_vector filelist;
+	git_strarray paths;
 
 	cl_git_pass(git_vector_init(&filelist, 100, &git__strcmp_cb));
 	cl_git_pass(git_vector_insert(&filelist, "a"));
@@ -1132,26 +1141,28 @@ void test_repo_iterator__workdirfilelist_icase(void)
 	cl_git_pass(git_vector_insert(&filelist, "k/1"));
 	cl_git_pass(git_vector_insert(&filelist, "k/a"));
 	cl_git_pass(git_vector_insert(&filelist, "L/1"));
+	paths.count = filelist.length;
+	paths.strings = filelist.contents;
 
 	g_repo = cl_git_sandbox_init("icase");
 
 	flag = GIT_ITERATOR_DONT_IGNORE_CASE;
 
-	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &filelist, flag, "c", "k/D"));
+	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &paths, flag, "c", "k/D"));
 	expect_iterator_items(i, 3, NULL, 3, NULL);
 	git_iterator_free(i);
 
-	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &filelist, flag, "k", "k/Z"));
+	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &paths, flag, "k", "k/Z"));
 	expect_iterator_items(i, 1, NULL, 1, NULL);
 	git_iterator_free(i);
 
 	flag = GIT_ITERATOR_IGNORE_CASE;
 
-	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &filelist, 0, "c", "k/D"));
+	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &paths, 0, "c", "k/D"));
 	expect_iterator_items(i, 5, NULL, 5, NULL);
 	git_iterator_free(i);
 
-	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &filelist, 0, "k", "k/Z"));
+	cl_git_pass(git_iterator_for_workdirfilelist(&i, g_repo, NULL, &paths, 0, "k", "k/Z"));
 	expect_iterator_items(i, 2, NULL, 2, NULL);
 	git_iterator_free(i);
 
