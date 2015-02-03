@@ -11,7 +11,7 @@ static void _trace_printf_cb(git_trace_level_t level, const char *msg)
 	printf("%s\n", msg);
 }
 
-#if defined(GIT_WIN32)
+#if 0 && defined(GIT_WIN32)
 static void _trace_debug_cb(git_trace_level_t level, const char *msg)
 {
 	/* TODO Use level to print a per-message prefix. */
@@ -22,14 +22,13 @@ static void _trace_debug_cb(git_trace_level_t level, const char *msg)
 
 	printf("%s\n", msg);
 }
+#else
+#define _trace_debug_cb _trace_printf_cb
 #endif
 
-//static int s_trace_loaded = 0;
-//static int s_trace_level = GIT_TRACE_NONE;
-//static void (*s_trace_cb)(git_trace_level_t level, const char *message) = NULL;
-static int s_trace_loaded = 1;
-static int s_trace_level = GIT_TRACE_TRACE;
-static void (*s_trace_cb)(git_trace_level_t level, const char *message) = _trace_debug_cb;
+static int s_trace_loaded = 0;
+static int s_trace_level = GIT_TRACE_NONE;
+static void (*s_trace_cb)(git_trace_level_t level, const char *message) = NULL;
 
 static void _load_trace_params(void)
 {
@@ -48,10 +47,16 @@ static void _load_trace_params(void)
 	/* TODO Parse sz_level and set s_trace_level. */
 	s_trace_level = GIT_TRACE_TRACE;
 
-	sz_method = cl_getenv("CLAR_TRACE_METHOD");
-	/* TODO Parse sz_method and allow alternate cb methods (if/when we define others). */
-	cl_assert(!sz_method || !*sz_method || (strcmp(sz_method, "default") == 0));
 	s_trace_cb = _trace_printf_cb;
+	sz_method = cl_getenv("CLAR_TRACE_METHOD");
+	if (sz_method && *sz_method) {
+		if (strcmp(sz_method, "printf") == 0)
+			s_trace_cb = _trace_printf_cb;
+		else if (strcmp(sz_method, "debug") == 0)
+			s_trace_cb = _trace_debug_cb;
+		else
+			printf("Unknown trace method: '%s'\n", sz_method);
+	}
 }
 
 void cl_maybe_enable_trace(const char *sz_test_name)

@@ -1709,7 +1709,6 @@ int git_iterator_for_indexfilelist(
 	return 0;
 
 done:
-	/* TODO release snapshot? */
 	git_iterator_free((git_iterator *)ifi);
 	return -1;
 }

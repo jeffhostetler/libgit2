@@ -62,4 +62,5 @@ void perf__do_merge(const char *fixture,
 	git_commit_free(commit_a);
 	git_commit_free(commit_b);
 	git_annotated_commit_free(annotated_commits[0]);
+	git_repository_free(g_repo);
 }
