@@ -423,7 +423,7 @@ static int pathspec_match_from_iterator(
 	if ((error = git_iterator_reset(iter, ps->prefix, ps->prefix)) < 0)
 		goto done;
 
-	if (git_iterator_type(iter) == GIT_ITERATOR_TYPE_WORKDIR &&
+	if (GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(git_iterator_type(iter)) &&
 		(error = git_repository_index__weakptr(
 			&index, git_iterator_owner(iter))) < 0)
 		goto done;

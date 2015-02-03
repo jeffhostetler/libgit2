@@ -2366,7 +2366,7 @@ static int merge_check_index(size_t *conflicts, git_repository *repo, git_index 
 	*conflicts = index_diff_list->deltas.length;
 
 done:
-	git_trace(GIT_TRACE_TRACE, "merge_check_index: End");
+	git_trace(GIT_TRACE_TRACE, "merge_check_index: End [%d conflicts]", (int)*conflicts);
 
 	git_tree_free(head_tree);
 	git_index_free(index_repo);
@@ -2418,7 +2418,7 @@ static int merge_check_workdir(size_t *conflicts, git_repository *repo, git_inde
 	*conflicts = wd_diff_list->deltas.length;
 
 done:
-	git_trace(GIT_TRACE_TRACE, "merge_check_workdir: End");
+	git_trace(GIT_TRACE_TRACE, "merge_check_workdir: End [%d conflicts]", (int)*conflicts);
 
 	git_diff_free(wd_diff_list);
 
@@ -2482,7 +2482,7 @@ int git_merge__check_result(git_repository *repo, git_index *index_new)
 	}
 
 done:
-	git_trace(GIT_TRACE_TRACE, "git_merge__check_result: End");
+	git_trace(GIT_TRACE_TRACE, "git_merge__check_result: End [%d conflicts]", (int)conflicts);
 
 	git_vector_free(&paths);
 	git_tree_free(head_tree);

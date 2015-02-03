@@ -2060,7 +2060,7 @@ bool git_iterator_current_is_ignored(git_iterator *iter)
 {
 	workdir_iterator *wi = (workdir_iterator *)iter;
 
-	if (iter->type != GIT_ITERATOR_TYPE_WORKDIR)
+	if (!GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(iter->type))
 		return false;
 
 	if (wi->is_ignored != GIT_IGNORE_UNCHECKED)
@@ -2075,7 +2075,7 @@ bool git_iterator_current_tree_is_ignored(git_iterator *iter)
 {
 	workdir_iterator *wi = (workdir_iterator *)iter;
 
-	if (iter->type != GIT_ITERATOR_TYPE_WORKDIR)
+	if (!GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(iter->type))
 		return false;
 
 	return (bool)(wi->fi.stack->is_ignored == GIT_IGNORE_TRUE);
@@ -2100,7 +2100,7 @@ int git_iterator_current_workdir_path(git_buf **path, git_iterator *iter)
 {
 	workdir_iterator *wi = (workdir_iterator *)iter;
 
-	if (iter->type != GIT_ITERATOR_TYPE_WORKDIR || !wi->fi.entry.path)
+	if (!GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(iter->type) || !wi->fi.entry.path)
 		*path = NULL;
 	else
 		*path = &wi->fi.path;
@@ -2120,7 +2120,7 @@ int git_iterator_advance_over_with_status(
 
 	*status = GIT_ITERATOR_STATUS_NORMAL;
 
-	if (iter->type != GIT_ITERATOR_TYPE_WORKDIR)
+	if (!GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(iter->type))
 		return git_iterator_advance(entryptr, iter);
 	if ((error = git_iterator_current(&entry, iter)) < 0)
 		return error;

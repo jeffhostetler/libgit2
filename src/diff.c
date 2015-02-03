@@ -98,10 +98,10 @@ static int diff_delta__from_one(
 		DIFF_FLAG_ISNT_SET(diff, GIT_DIFF_INCLUDE_UNREADABLE))
 		return 0;
 
-	git_trace(GIT_TRACE_TRACE, "diff_delta__from_one: 0x%lx 0x%lx %0xlx %s",
+	git_trace(GIT_TRACE_TRACE, "diff_delta__from_one: [filelist %ld][pathspec %ld][icase %ld] '%s'",
+			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH),
 			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_DISABLE_PATHSPEC_MATCH),
 			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_IGNORE_CASE),
-			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH),
 			  entry->path);
 
 	if (DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH)) {
@@ -153,6 +153,12 @@ static int diff_delta__from_two(
 {
 	git_diff_delta *delta;
 	const char *canonical_path = old_entry->path;
+
+	git_trace(GIT_TRACE_TRACE, "diff_delta__from_two: [status %lx][old %p,0%lo][new %p,0%lo] '%s'",
+			  status,
+			  old_entry, old_mode,
+			  new_entry, new_mode,
+			  ((matched_pathspec) ? matched_pathspec : "(nil)"));
 
 	if (status == GIT_DELTA_UNMODIFIED &&
 		DIFF_FLAG_ISNT_SET(diff, GIT_DIFF_INCLUDE_UNMODIFIED))
@@ -323,11 +329,13 @@ static const char *diff_mnemonic_prefix(
 	const char *pfx = "";
 
 	switch (type) {
-	case GIT_ITERATOR_TYPE_EMPTY:   pfx = "c"; break;
-	case GIT_ITERATOR_TYPE_TREE:    pfx = "c"; break;
-	case GIT_ITERATOR_TYPE_INDEX:   pfx = "i"; break;
-	case GIT_ITERATOR_TYPE_WORKDIR: pfx = "w"; break;
-	case GIT_ITERATOR_TYPE_FS:      pfx = left_side ? "1" : "2"; break;
+	case GIT_ITERATOR_TYPE_EMPTY:           pfx = "c"; break;
+	case GIT_ITERATOR_TYPE_TREE:            pfx = "c"; break;
+	case GIT_ITERATOR_TYPE_INDEX:           pfx = "i"; break;
+	case GIT_ITERATOR_TYPE_INDEXFILELIST:   pfx = "i"; break;
+	case GIT_ITERATOR_TYPE_WORKDIR:         pfx = "w"; break;
+	case GIT_ITERATOR_TYPE_WORKDIRFILELIST: pfx = "w"; break;
+	case GIT_ITERATOR_TYPE_FS:              pfx = left_side ? "1" : "2"; break;
 	default: break;
 	}
 
@@ -412,7 +420,7 @@ static int diff_list_apply_options(
 		memcpy(&diff->opts, opts, sizeof(diff->opts));
 		DIFF_FLAG_SET(diff, GIT_DIFF_IGNORE_CASE, icase);
 
-		git_trace(GIT_TRACE_TRACE, "diff_list_apply_options: [count pathspec %d] 0x%lx",
+		git_trace(GIT_TRACE_TRACE, "diff_list_apply_options: [count pathspec %d][filelist %ld]",
 				  opts->pathspec.count,
 				  DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH));
 
@@ -469,11 +477,16 @@ static int diff_list_apply_options(
 	}
 
 	/* Unset UPDATE_INDEX unless diffing workdir and index */
+	/* TODO There has to be an easier way to write this. */
 	if (DIFF_FLAG_IS_SET(diff, GIT_DIFF_UPDATE_INDEX) &&
 		(!(diff->old_src == GIT_ITERATOR_TYPE_WORKDIR ||
 		   diff->new_src == GIT_ITERATOR_TYPE_WORKDIR) ||
 		 !(diff->old_src == GIT_ITERATOR_TYPE_INDEX ||
-		   diff->new_src == GIT_ITERATOR_TYPE_INDEX)))
+		   diff->new_src == GIT_ITERATOR_TYPE_INDEX) ||
+		 !(diff->old_src == GIT_ITERATOR_TYPE_WORKDIRFILELIST ||
+		   diff->new_src == GIT_ITERATOR_TYPE_WORKDIRFILELIST) ||
+		 !(diff->old_src == GIT_ITERATOR_TYPE_INDEXFILELIST ||
+		   diff->new_src == GIT_ITERATOR_TYPE_INDEXFILELIST)))
 		diff->opts.flags &= ~GIT_DIFF_UPDATE_INDEX;
 
 	/* if ignore_submodules not explicitly set, check diff config */
@@ -725,15 +738,15 @@ static int maybe_modified(
 	const git_index_entry *nitem = info->nitem;
 	unsigned int omode = oitem->mode;
 	unsigned int nmode = nitem->mode;
-	bool new_is_workdir = (info->new_iter->type == GIT_ITERATOR_TYPE_WORKDIR);
+	bool new_is_workdir = GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(info->new_iter->type);
 	bool modified_uncertain = false;
 	const char *matched_pathspec;
 	int error = 0;
 
-	git_trace(GIT_TRACE_TRACE, "maybe_modified: 0x%lx 0x%lx 0x%lx %s",
+	git_trace(GIT_TRACE_TRACE, "maybe_modified: [filelist %ld][pathspec %ld][icase %ld] '%s'",
+			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH),
 			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_DISABLE_PATHSPEC_MATCH),
 			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_IGNORE_CASE),
-			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH),
 			  oitem->path);
 
 	if (DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH)) {
@@ -976,7 +989,7 @@ static int handle_unmatched_new_item(
 		/* item contained in ignored directory, so skip over it */
 		return git_iterator_advance(&info->nitem, info->new_iter);
 
-	else if (info->new_iter->type != GIT_ITERATOR_TYPE_WORKDIR)
+	else if (!GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(info->new_iter->type))
 		delta_type = GIT_DELTA_ADDED;
 
 	else if (nitem->mode == GIT_FILEMODE_COMMIT) {
@@ -1251,6 +1264,7 @@ int git_diff_index_to_workdir(
 		return error;
 
 	if ((opts) && (opts->pathspec.count > 0) && (opts->flags & GIT_DIFF_ENABLE_FILELIST_MATCH)) {
+		/* TODO force set DISABLE_PATHSPEC just for completeness */
 		DIFF_FROM_ITERATORS(
 			git_iterator_for_indexfilelist(&a, index, &opts->pathspec, 0, pfx, pfx),
 			git_iterator_for_workdirfilelist(
