@@ -2355,6 +2355,7 @@ static int merge_check_index(size_t *conflicts, git_repository *repo, git_index 
 	}
 
 	/* TODO ? Enable filelist match ? */
+	opts.flags |= GIT_DIFF_ENABLE_FILELIST_MATCH;
 	opts.pathspec.count = staged_paths.length;
 	opts.pathspec.strings = (char **)staged_paths.contents;
 
