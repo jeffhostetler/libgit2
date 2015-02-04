@@ -479,14 +479,10 @@ static int diff_list_apply_options(
 	/* Unset UPDATE_INDEX unless diffing workdir and index */
 	/* TODO There has to be an easier way to write this. */
 	if (DIFF_FLAG_IS_SET(diff, GIT_DIFF_UPDATE_INDEX) &&
-		(!(diff->old_src == GIT_ITERATOR_TYPE_WORKDIR ||
-		   diff->new_src == GIT_ITERATOR_TYPE_WORKDIR) ||
-		 !(diff->old_src == GIT_ITERATOR_TYPE_INDEX ||
-		   diff->new_src == GIT_ITERATOR_TYPE_INDEX) ||
-		 !(diff->old_src == GIT_ITERATOR_TYPE_WORKDIRFILELIST ||
-		   diff->new_src == GIT_ITERATOR_TYPE_WORKDIRFILELIST) ||
-		 !(diff->old_src == GIT_ITERATOR_TYPE_INDEXFILELIST ||
-		   diff->new_src == GIT_ITERATOR_TYPE_INDEXFILELIST)))
+		(!(GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(diff->old_src) ||
+		   GIT_ITERATOR_TYPE_IS_WORKDIR_OR_FILELIST(diff->new_src)) ||
+		 !(GIT_ITERATOR_TYPE_IS_INDEX_OR_FILELIST(diff->old_src) ||
+		   GIT_ITERATOR_TYPE_IS_INDEX_OR_FILELIST(diff->new_src))))
 		diff->opts.flags &= ~GIT_DIFF_UPDATE_INDEX;
 
 	/* if ignore_submodules not explicitly set, check diff config */

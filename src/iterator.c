@@ -1696,12 +1696,6 @@ int git_iterator_for_indexfilelist(
 		if ((error = git_vector_insert(&ifi->filelist, paths->strings[k])) < 0)
 			goto done;
 	git_vector_sort(&ifi->filelist);
-	{
-		size_t k;
-		for (k=0; k < git_vector_length(&ifi->filelist); k++)
-			git_trace(GIT_TRACE_TRACE, "setup: [iter %p] k[%3d] '%s'",
-					  ifi, (int)k, git_vector_get(&ifi->filelist, k));
-	}
 
 	indexfilelist_iterator__reset((git_iterator *)ifi, NULL, NULL);
 
@@ -1795,7 +1789,7 @@ static int workdirfilelist_iterator__advance_into(
 {
 	/* not needed since we don't present a diving/treewalk concept. */
 	GIT_UNUSED(self); GIT_UNUSED(prefix);
-	return -1;
+	return GIT_ENOTFOUND;
 }
 
 static int workdirfilelist_iterator__seek(
@@ -1928,12 +1922,6 @@ int git_iterator_for_workdirfilelist(
 		if ((error = git_vector_insert(&wdfi->filelist, paths->strings[k])) < 0)
 			goto done;
 	git_vector_sort(&wdfi->filelist);
-	{
-		size_t k;
-		for (k=0; k < git_vector_length(&wdfi->filelist); k++)
-			git_trace(GIT_TRACE_TRACE, "setup: [iter %p] k[%3d] '%s'",
-					  wdfi, (int)k, git_vector_get(&wdfi->filelist, k));
-	}
 
 	workdirfilelist_iterator__reset((git_iterator *)wdfi, NULL, NULL);
 

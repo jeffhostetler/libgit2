@@ -1,5 +1,6 @@
 #include "clar_libgit2.h"
 #include "helper__perf__do_merge.h"
+#include "helper__perf__timer.h"
 #include "trace.h"
 
 static git_repository * g_repo;
@@ -19,6 +20,12 @@ void perf__do_merge(const char *fixture,
 	git_commit *commit_a = NULL;
 	git_commit *commit_b = NULL;
 	git_annotated_commit *annotated_commits[1] = { NULL };
+	perf_timer t_total = PERF_TIMER_INIT;
+	perf_timer t_clone = PERF_TIMER_INIT;
+	perf_timer t_checkout = PERF_TIMER_INIT;
+	perf_timer t_merge = PERF_TIMER_INIT;
+
+	perf__timer__start(&t_total);
 
 	checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE_CREATE;
 	clone_opts.checkout_opts = checkout_opts;
@@ -26,7 +33,9 @@ void perf__do_merge(const char *fixture,
 
 	git_trace(GIT_TRACE_TRACE, "perf__do_merge: clone beginning (%s,%s)",
 			  fixture, test_name);
+	perf__timer__start(&t_clone);
 	cl_git_pass(git_clone(&g_repo, fixture, test_name, &clone_opts));
+	perf__timer__stop(&t_clone);
 	git_trace(GIT_TRACE_TRACE, "perf__do_merge: clone finished");
 	
 	git_oid_fromstr(&oid_a, id_a);
@@ -36,7 +45,9 @@ void perf__do_merge(const char *fixture,
 								  0, NULL, NULL));
 
 	git_trace(GIT_TRACE_TRACE, "perf__do_merge: checkout beginning (%s)", id_a);
+	perf__timer__start(&t_checkout);
 	cl_git_pass(git_checkout_tree(g_repo, (git_object*)commit_a, &checkout_opts));
+	perf__timer__stop(&t_checkout);
 	git_trace(GIT_TRACE_TRACE, "perf__do_merge: checkout finished");
 
 	cl_git_pass(git_repository_set_head(g_repo,
@@ -52,9 +63,11 @@ void perf__do_merge(const char *fixture,
 	cl_git_pass(git_annotated_commit_lookup(&annotated_commits[0], g_repo, &oid_b));
 
 	git_trace(GIT_TRACE_TRACE, "perf__do_merge: merge beginning (%s)", id_b);
+	perf__timer__start(&t_merge);
 	cl_git_pass(git_merge(g_repo,
 						  (const git_annotated_commit **)annotated_commits, 1,
 						  &merge_opts, &checkout_opts));
+	perf__timer__stop(&t_merge);
 	git_trace(GIT_TRACE_TRACE, "perf__do_merge: merge finished");
 
 	git_reference_free(ref_branch_a);
@@ -63,4 +76,11 @@ void perf__do_merge(const char *fixture,
 	git_commit_free(commit_b);
 	git_annotated_commit_free(annotated_commits[0]);
 	git_repository_free(g_repo);
+
+	perf__timer__stop(&t_total);
+
+	perf__timer__report(&t_clone, "%s: clone", test_name);
+	perf__timer__report(&t_checkout, "%s: checkout", test_name);
+	perf__timer__report(&t_merge, "%s: merge", test_name);
+	perf__timer__report(&t_total, "%s: total", test_name);
 }

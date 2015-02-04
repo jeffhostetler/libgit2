@@ -2408,7 +2408,7 @@ static int merge_check_workdir(size_t *conflicts, git_repository *repo, git_inde
 	 * will be applied by the merge (including conflicts).  Ensure that there
 	 * are no changes in the workdir to these paths.
 	 */
-	opts.flags |= GIT_DIFF_ENABLE_FILELIST_MATCH;
+//	opts.flags |= GIT_DIFF_ENABLE_FILELIST_MATCH;
 	opts.pathspec.count = merged_paths->length;
 	opts.pathspec.strings = (char **)merged_paths->contents;
 
@@ -2433,7 +2433,7 @@ int git_merge__check_result(git_repository *repo, git_index *index_new)
 	git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
 	git_diff_delta *delta;
 	git_vector paths = GIT_VECTOR_INIT;
-	size_t i, index_conflicts = 0, wd_conflicts = 0, conflicts;
+	size_t i, index_conflicts = 0, wd_conflicts = 0, conflicts = 0;
 	const git_index_entry *e;
 	int error = 0;
 

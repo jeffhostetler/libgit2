@@ -11,7 +11,7 @@ static void _trace_printf_cb(git_trace_level_t level, const char *msg)
 	printf("%s\n", msg);
 }
 
-#if 0 && defined(GIT_WIN32)
+#if defined(GIT_WIN32)
 static void _trace_debug_cb(git_trace_level_t level, const char *msg)
 {
 	/* TODO Use level to print a per-message prefix. */
@@ -51,7 +51,7 @@ static void _load_trace_params(void)
 	sz_method = cl_getenv("CLAR_TRACE_METHOD");
 	if (sz_method && *sz_method) {
 		if (strcmp(sz_method, "printf") == 0)
-			s_trace_cb = _trace_printf_cb;
+			s_trace_cb = _trace_debug_cb;
 		else if (strcmp(sz_method, "debug") == 0)
 			s_trace_cb = _trace_debug_cb;
 		else
