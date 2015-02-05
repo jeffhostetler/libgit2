@@ -2354,13 +2354,12 @@ static int merge_check_index(size_t *conflicts, git_repository *repo, git_index 
 			goto done;
 	}
 
-	/* TODO ? Enable filelist match ? */
 	opts.flags |= GIT_DIFF_ENABLE_FILELIST_MATCH;
 	opts.pathspec.count = staged_paths.length;
 	opts.pathspec.strings = (char **)staged_paths.contents;
 
-	if ((error = git_iterator_for_index(&iter_repo, index_repo, GIT_ITERATOR_DONT_IGNORE_CASE, NULL, NULL)) < 0 ||
-		(error = git_iterator_for_index(&iter_new, index_new, GIT_ITERATOR_DONT_IGNORE_CASE, NULL, NULL)) < 0 ||
+	if ((error = git_iterator_for_indexfilelist(&iter_repo, index_repo, &opts.pathspec, GIT_ITERATOR_DONT_IGNORE_CASE, NULL, NULL)) < 0 ||
+		(error = git_iterator_for_indexfilelist(&iter_new, index_new, &opts.pathspec, GIT_ITERATOR_DONT_IGNORE_CASE, NULL, NULL)) < 0 ||
 		(error = git_diff__from_iterators(&index_diff_list, repo, iter_repo, iter_new, &opts)) < 0)
 		goto done;
 
