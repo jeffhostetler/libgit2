@@ -12,7 +12,8 @@ struct perf__timer
 
 struct perf__timer
 {
-	int TODO;
+	uint32_t sum;
+	uint32_t time_started;
 };
 
 #define PERF_TIMER_INIT {0}
