@@ -72,7 +72,7 @@ int git_pathspec__vinit(
 	memset(vspec, 0, sizeof(*vspec));
 
 	git_trace(GIT_TRACE_TRACE, "git_pathspec__vinit: [count strspec %d]",
-			  strspec->count);
+		  ((strspec) ? strspec->count : 0));
 
 	if (git_pathspec_is_empty(strspec))
 		return 0;

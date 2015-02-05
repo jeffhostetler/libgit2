@@ -1010,7 +1010,7 @@ void test_repo_iterator__indexfilelist(void)
 	cl_git_pass(git_vector_insert(&filelist, "k/a"));
 	cl_git_pass(git_vector_insert(&filelist, "L/1"));
 	paths.count = filelist.length;
-	paths.strings = filelist.contents;
+	paths.strings = (char **)filelist.contents;
 
 	g_repo = cl_git_sandbox_init("icase");
 
@@ -1052,7 +1052,7 @@ void test_repo_iterator__indexfilelist_icase(void)
 	cl_git_pass(git_vector_insert(&filelist, "k/a"));
 	cl_git_pass(git_vector_insert(&filelist, "L/1"));
 	paths.count = filelist.length;
-	paths.strings = filelist.contents;
+	paths.strings = (char **)filelist.contents;
 
 	g_repo = cl_git_sandbox_init("icase");
 
@@ -1104,7 +1104,7 @@ void test_repo_iterator__workdirfilelist(void)
 	cl_git_pass(git_vector_insert(&filelist, "k/a"));
 	cl_git_pass(git_vector_insert(&filelist, "L/1"));
 	paths.count = filelist.length;
-	paths.strings = filelist.contents;
+	paths.strings = (char **)filelist.contents;
 
 	g_repo = cl_git_sandbox_init("icase");
 
@@ -1142,7 +1142,7 @@ void test_repo_iterator__workdirfilelist_icase(void)
 	cl_git_pass(git_vector_insert(&filelist, "k/a"));
 	cl_git_pass(git_vector_insert(&filelist, "L/1"));
 	paths.count = filelist.length;
-	paths.strings = filelist.contents;
+	paths.strings = (char **)filelist.contents;
 
 	g_repo = cl_git_sandbox_init("icase");
 

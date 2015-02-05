@@ -420,9 +420,9 @@ static int diff_list_apply_options(
 		memcpy(&diff->opts, opts, sizeof(diff->opts));
 		DIFF_FLAG_SET(diff, GIT_DIFF_IGNORE_CASE, icase);
 
-		git_trace(GIT_TRACE_TRACE, "diff_list_apply_options: [count pathspec %d][filelist %ld]",
+		git_trace(GIT_TRACE_TRACE, "diff_list_apply_options: [count pathspec %d][filelist %d]",
 				  opts->pathspec.count,
-				  DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH));
+				  (int)DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH));
 
 		if (!DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH)) {
 			/* initialize pathspec from options */
@@ -430,6 +430,8 @@ static int diff_list_apply_options(
 				return -1;
 		}
 	}
+
+	git_trace(GIT_TRACE_TRACE, "diff_list_apply_options: [flags 0x%x]", (int)diff->opts.flags);
 
 	/* flag INCLUDE_TYPECHANGE_TREES implies INCLUDE_TYPECHANGE */
 	if (DIFF_FLAG_IS_SET(diff, GIT_DIFF_INCLUDE_TYPECHANGE_TREES))
@@ -739,10 +741,10 @@ static int maybe_modified(
 	const char *matched_pathspec;
 	int error = 0;
 
-	git_trace(GIT_TRACE_TRACE, "maybe_modified: [filelist %ld][pathspec %ld][icase %ld] '%s'",
-			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH),
-			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_DISABLE_PATHSPEC_MATCH),
-			  DIFF_FLAG_IS_SET(diff, GIT_DIFF_IGNORE_CASE),
+	git_trace(GIT_TRACE_TRACE, "maybe_modified: [filelist %d][pathspec %d][icase %d] '%s'",
+		  (int)DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH),
+		  (int)DIFF_FLAG_IS_SET(diff, GIT_DIFF_DISABLE_PATHSPEC_MATCH),
+		  (int)DIFF_FLAG_IS_SET(diff, GIT_DIFF_IGNORE_CASE),
 			  oitem->path);
 
 	if (DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH)) {
@@ -755,6 +757,12 @@ static int maybe_modified(
 				&matched_pathspec, NULL))
 			return 0;
 	}
+
+	git_trace(GIT_TRACE_TRACE, "maybe_modified2: [filelist %d][pathspec %d][icase %d] '%s'",
+		  (int)DIFF_FLAG_IS_SET(diff, GIT_DIFF_ENABLE_FILELIST_MATCH),
+		  (int)DIFF_FLAG_IS_SET(diff, GIT_DIFF_DISABLE_PATHSPEC_MATCH),
+		  (int)DIFF_FLAG_IS_SET(diff, GIT_DIFF_IGNORE_CASE),
+		  matched_pathspec);
 
 	memset(&noid, 0, sizeof(noid));
 
@@ -1179,11 +1187,11 @@ int git_diff_tree_to_tree(
 
 	assert(diff && repo);
 
-	git_trace(GIT_TRACE_TRACE, "git_diff_tree_to_tree: Begin(%p, %s, 0x%lx) [count pathspec %d]",
+	git_trace(GIT_TRACE_TRACE, "git_diff_tree_to_tree: Begin(%p, %s, 0x%x) [count pathspec %d]",
 			  repo,
 			  ((repo->workdir) ? repo->workdir : "(null)"),
-			  ((opts) ? (opts->flags) : 0),
-			  (int)opts->pathspec.count);
+			  (int)((opts) ? (opts->flags) : 0),
+			  ((opts) ? (int)opts->pathspec.count : 0));
 
 	/* for tree to tree diff, be case sensitive even if the index is
 	 * currently case insensitive, unless the user explicitly asked

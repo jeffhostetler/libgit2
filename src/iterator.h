@@ -132,7 +132,7 @@ extern int git_iterator_for_filesystem(
 int git_iterator_for_indexfilelist(
 	git_iterator **iter,
 	git_index *index,
-	git_strarray *paths,
+	const git_strarray *paths,
 	git_iterator_flag_t flags,
 	const char *start,
 	const char *end);
@@ -142,7 +142,7 @@ int git_iterator_for_workdirfilelist(
 	git_iterator **iter,
 	git_repository *repo,
 	const char *repo_workdir,
-	git_strarray *paths,
+	const git_strarray *paths,
 	git_iterator_flag_t flags,
 	const char *start,
 	const char *end);
@@ -182,8 +182,9 @@ GIT_INLINE(int) git_iterator_advance(
 {
 	int r = iter->cb->advance(entry, iter);
 	git_trace(GIT_TRACE_TRACE, "git_iterator_advance: [iter %p] yields [%d, %p, %s]",
-			  iter, r, *entry,
-			  (((*entry) && ((*entry)->path)) ? ((*entry)->path) : "(null)"));
+			  iter, r,
+			  ((entry) ? *entry : NULL),
+			  (((entry) && (*entry) && ((*entry)->path)) ? ((*entry)->path) : "(null)"));
 	return r;
 }
 

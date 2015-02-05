@@ -1567,10 +1567,10 @@ static int indexfilelist_iterator__advance(
 }
 
 static int indexfilelist_iterator__advance_into(
-	git_iterator *self, const char *prefix)
+	const git_index_entry **entry, git_iterator *self)
 {
 	/* not needed since we don't present a diving/treewalk concept. */
-	GIT_UNUSED(self); GIT_UNUSED(prefix);
+	GIT_UNUSED(entry); GIT_UNUSED(self);
 	return -1;
 }
 
@@ -1646,7 +1646,7 @@ static void indexfilelist_iterator__free(git_iterator *self)
 int git_iterator_for_indexfilelist(
 	git_iterator **iter,
 	git_index *index,
-	git_strarray *paths,
+	const git_strarray *paths,
 	git_iterator_flag_t flags,
 	const char *start,
 	const char *end)
@@ -1688,8 +1688,8 @@ int git_iterator_for_indexfilelist(
 	git_vector_sort(&ifi->entries);
 
 	/* Cache a copy of the given filelist and sort it as requested. */
-	if ((error = git_vector_init(&ifi->filelist, paths->count, iterator__ignore_case(ifi)?
-		git__strcasecmp : git__strcmp)) < 0)
+	if ((error = git_vector_init(&ifi->filelist, paths->count,
+		((git_vector_cmp)(iterator__ignore_case(ifi) ? git__strcasecmp : git__strcmp)))) < 0)
 		goto done;
 	/* TODO Should we use git_pool and make a deep copy of the paths? */
 	for (k = 0; k < paths->count; k++)
@@ -1785,10 +1785,10 @@ static int workdirfilelist_iterator__advance(
 }
 
 static int workdirfilelist_iterator__advance_into(
-	git_iterator *self, const char *prefix)
+	const git_index_entry **entry, git_iterator *self)
 {
 	/* not needed since we don't present a diving/treewalk concept. */
-	GIT_UNUSED(self); GIT_UNUSED(prefix);
+	GIT_UNUSED(entry); GIT_UNUSED(self);
 	return GIT_ENOTFOUND;
 }
 
@@ -1868,7 +1868,7 @@ int git_iterator_for_workdirfilelist(
 	git_iterator **iter,
 	git_repository *repo,
 	const char *repo_workdir,
-	git_strarray *paths,
+	const git_strarray *paths,
 	git_iterator_flag_t flags,
 	const char *start,
 	const char *end)
@@ -1914,8 +1914,8 @@ int git_iterator_for_workdirfilelist(
 	git_buf_sets(&wdfi->buf_workdir, repo_workdir);
 
 	/* Cache a copy of the given filelist and sort it as requested. */
-	if ((error = git_vector_init(&wdfi->filelist, paths->count, iterator__ignore_case(wdfi)?
-		git__strcasecmp : git__strcmp)) < 0)
+	if ((error = git_vector_init(&wdfi->filelist, paths->count, 
+		((git_vector_cmp)(iterator__ignore_case(wdfi) ? git__strcasecmp : git__strcmp)))) < 0)
 		goto done;
 	/* TODO Should we use git_pool and make a deep copy of the paths? */
 	for (k = 0; k < paths->count; k++)
