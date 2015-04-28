@@ -23,7 +23,7 @@ static int tempdir_isvalid(const char *path)
 	return (access(path, W_OK) == 0);
 }
 
-int gitbench__create_tempdir(char **out)
+int gitbench_util_create_tempdir(char **out)
 {
 	git_buf buf_env = GIT_BUF_INIT;
 	git_buf tempdir = GIT_BUF_INIT;

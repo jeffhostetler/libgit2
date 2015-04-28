@@ -50,7 +50,7 @@ int gitbench_run_start(gitbench_run *run)
 	assert(run);
 	assert(run->overall_start == 0);
 
-	if (gitbench__create_tempdir((char **)&run->tempdir) < 0)
+	if (gitbench_util_create_tempdir((char **)&run->tempdir) < 0)
 		return -1;
 
 	if (run->verbosity)

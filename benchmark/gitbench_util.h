@@ -25,6 +25,6 @@ extern FILE *logfile;
 extern const char *progname;
 extern int verbosity;
 
-extern int gitbench__create_tempdir(char **out);
+extern int gitbench_util_create_tempdir(char **out);
 
 #endif
