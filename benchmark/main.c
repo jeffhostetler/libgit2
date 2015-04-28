@@ -11,10 +11,10 @@
 #include "vector.h"
 #include "path.h"
 
-#include "bench_util.h"
-#include "opt.h"
-#include "benchmark.h"
-#include "run.h"
+#include "gitbench_util.h"
+#include "gitbench_opt.h"
+#include "gitbench_benchmark.h"
+#include "gitbench_run.h"
 
 FILE *logfile = NULL;
 const char *progname;

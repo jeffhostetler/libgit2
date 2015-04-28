@@ -5,8 +5,8 @@
  * a Linking Exception. For full terms see the included COPYING file.
  */
 
-#ifndef BENCH_UTIL_H
-#define BENCH_UTIL_H
+#ifndef H_GITBENCH_UTIL_H
+#define H_GITBENCH_UTIL_H
 
 /*****************************************************************/
 

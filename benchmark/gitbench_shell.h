@@ -5,12 +5,12 @@
  * a Linking Exception. For full terms see the included COPYING file.
  */
 
-#ifndef OPERATION_H
-#define OPERATION_H
+#ifndef H_GITBENCH_SHELL_H
+#define H_GITBENCH_SHELL_H
 
-typedef struct gitbench_operation_spec {
-	unsigned int code;
-	const char *description;
-} gitbench_operation_spec;
+extern int gitbench_shell(
+	const char * const argv[],
+	const char *new_cwd,
+	int *p_raw_exit_status);
 
 #endif

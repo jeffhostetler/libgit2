@@ -5,13 +5,13 @@
  * a Linking Exception. For full terms see the included COPYING file.
  */
 
-#ifndef RUN_H
-#define RUN_H
+#ifndef H_GITBENCH_RUN_H
+#define H_GITBENCH_RUN_H
 
 #include "common.h"
 #include "vector.h"
 #include "array.h"
-#include "operation.h"
+#include "gitbench_operation.h"
 
 typedef struct {
 	gitbench_operation_spec *spec;

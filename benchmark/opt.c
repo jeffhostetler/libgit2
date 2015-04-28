@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "opt.h"
+#include "gitbench_opt.h"
 
 #ifdef _WIN32
 # include <Windows.h>

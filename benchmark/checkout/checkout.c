@@ -9,13 +9,13 @@
 #include "git2.h"
 #include "git2/sys/repository.h"
 #include "common.h"
-#include "bench_util.h"
 #include "buffer.h"
 #include "fileops.h"
-#include "opt.h"
-#include "run.h"
-#include "operation.h"
-#include "benchmark.h"
+#include "gitbench_util.h"
+#include "gitbench_opt.h"
+#include "gitbench_run.h"
+#include "gitbench_operation.h"
+#include "gitbench_benchmark.h"
 
 typedef struct gitbench_benchmark_checkout {
 	gitbench_benchmark base;

@@ -5,11 +5,11 @@
  * a Linking Exception. For full terms see the included COPYING file.
  */
 
-#ifndef BENCHMARK_H
-#define BENCHMARK_H
+#ifndef H_GITBENCH_BENCHMARK_H
+#define H_GTIBENCH_BENCHMARK_H
 
-#include "operation.h"
-#include "run.h"
+#include "gitbench_operation.h"
+#include "gitbench_run.h"
 
 typedef struct gitbench_benchmark gitbench_benchmark;
 

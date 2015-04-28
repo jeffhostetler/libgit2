@@ -7,8 +7,8 @@
 
 #include "common.h"
 #include "fileops.h"
-#include "run.h"
-#include "bench_util.h"
+#include "gitbench_run.h"
+#include "gitbench_util.h"
 
 #define RUN_OPERATION_NONE UINT_MAX
 

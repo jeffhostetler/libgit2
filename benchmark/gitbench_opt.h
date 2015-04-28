@@ -6,8 +6,8 @@
  * For full terms and conditions, see the included LICENSE file.
  */
 
-#ifndef OPT_H
-#define OPT_H
+#ifndef H_GITBENCH_OPT_H
+#define H_GITBENCH_OPT_H
 
 #include <stdio.h>
 
@@ -151,4 +151,4 @@ int gitbench_opt_usage_fprint(
 	const char *command,
 	const gitbench_opt_spec specs[]);
 
-#endif /* OPT_H */
+#endif /* H_GITBENCH_OPT_H */
