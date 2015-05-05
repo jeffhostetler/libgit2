@@ -79,75 +79,6 @@ static int _do_core_setup(
 	return error;
 }
 
-static int _do_lg2_checkoutn(
-	gitbench_benchmark_checkoutn *benchmark,
-	gitbench_run *run,
-	const char *wd,
-	int j)
-{
-	git_repository *repo = NULL;
-	git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
-	git_object *obj = NULL;
-	int error;
-	enum checkoutn_operation_t op = ((j == 0)
-									 ? CHECKOUTN_OPERATION_LG2_INIT_CO
-									 : CHECKOUTN_OPERATION_LG2_DO_CO);
-	const char *sz_ref = (const char *)git_vector_get(&benchmark->vec_refs, j);
-
-	gitbench_run_start_operation(run, op);
-
-	checkout_opts.checkout_strategy = GIT_CHECKOUT_FORCE;
-
-	if ((error = git_repository_open(&repo, wd)) < 0)
-		goto done;
-
-	if ((error = git_revparse_single(&obj, repo, sz_ref)) < 0)
-		goto done;
-
-	if ((error = git_checkout_tree(repo, obj, &checkout_opts)) < 0)
-		goto done;
-
-	if ((error = git_repository_set_head_detached(repo, git_object_id(obj))) < 0)
-		goto done;
-
-done:
-	gitbench_run_finish_operation(run);
-	git_object_free(obj);
-	git_repository_free(repo);
-	return error;
-}
-
-static int _do_exe_checkoutn(
-	gitbench_benchmark_checkoutn *benchmark,
-	gitbench_run *run,
-	const char *wd,
-	int j)
-{
-	const char * argv[10] = {0};
-	int result;
-	int k = 0;
-	enum checkoutn_operation_t op = ((j == 0)
-									 ? CHECKOUTN_OPERATION_EXE_INIT_CO
-									 : CHECKOUTN_OPERATION_EXE_DO_CO);
-
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "checkout";
-	argv[k++] = "--quiet";
-	argv[k++] = "--force";
-	argv[k++] = "--detach";
-	argv[k++] = (const char *)git_vector_get(&benchmark->vec_refs, j);
-	argv[k++] = 0;
-
-	gitbench_run_start_operation(run, op);
-
-	if ((result = gitbench_shell(argv, wd, NULL)) < 0)
-		goto done;
-
-done:
-	gitbench_run_finish_operation(run);
-	return result;
-}
-
 static int _do_checkoutn(
 	gitbench_benchmark_checkoutn *benchmark,
 	gitbench_run *run,
@@ -155,6 +86,7 @@ static int _do_checkoutn(
 {
 	char *sz_i;
 	size_t i;
+	int op;
 	int error;
 
 	git_vector_foreach(&benchmark->vec_refs, i, sz_i) {
@@ -162,12 +94,20 @@ static int _do_checkoutn(
 			fprintf(gitbench_globals.logfile, ": Checkout %s\n", sz_i);
 
 		if (run->use_git_exe) {
-			if ((error = _do_exe_checkoutn(benchmark, run, wd, i)) < 0)
-				goto done;
+			if (i == 0)
+				op = CHECKOUTN_OPERATION_EXE_INIT_CO;
+			else
+				op = CHECKOUTN_OPERATION_EXE_DO_CO;
+			error = gitbench_util_checkout__exe(run, wd, sz_i, op);
 		} else {
-			if ((error = _do_lg2_checkoutn(benchmark, run, wd, i)) < 0)
-				goto done;
+			if (i == 0)
+				op = CHECKOUTN_OPERATION_LG2_INIT_CO;
+			else
+				op = CHECKOUTN_OPERATION_LG2_DO_CO;
+			error = gitbench_util_checkout__lg2(run, wd, sz_i, op);
 		}
+		if (error < 0)
+			goto done;
 
 		/* We can run both version of status regardless of who does the checkout. */
 		if ((error = gitbench_util_status__exe(run, wd, CHECKOUTN_OPERATION_EXE_STATUS, benchmark->status_count)) < 0)

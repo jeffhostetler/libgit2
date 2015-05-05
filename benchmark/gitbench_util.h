@@ -76,4 +76,28 @@ int gitbench_util_clone__exe(
 	bool bare,
 	int operation_id);
 
+/**
+ * Invoke "checkout" using LG2.
+ * Checkout named ref in detached state.
+ * Record execution time under id.
+ * This routine performs a single "step" in an overall "benchmark".
+ */
+int gitbench_util_checkout__lg2(
+	gitbench_run *run,
+	const char *wd,
+	const char *ref,
+	int operation_id);
+
+/**
+ * Invoke "checkout" using GIT.EXE.
+ * Checkout named ref in detached state.
+ * Record execution time under id.
+ * This routine performs a single "step" in an overall "benchmark".
+ */
+int gitbench_util_checkout__exe(
+	gitbench_run *run,
+	const char *wd,
+	const char *ref,
+	int operation_id);
+
 #endif
