@@ -62,36 +62,6 @@ static const gitbench_opt_spec merge_cmdline_opts[] = {
 	{ 0 }
 };
 
-/**
- * Checkout the requested commit in detached head state.
- */
-static int _init_exe_checkout(
-	gitbench_benchmark_merge *benchmark,
-	gitbench_run *run,
-	const char *wd)
-{
-	const char * argv[10] = {0};
-	int k;
-	int error;
-
-	gitbench_run_start_operation(run, MERGE_OPERATION_EXE_CHECKOUT);
-
-	k = 0;
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "checkout";
-	argv[k++] = "--quiet";
-	argv[k++] = "--detach";
-	argv[k++] = benchmark->ref_name_checkout;
-	argv[k++] = 0;
-
-	if ((error = gitbench_shell(argv, wd, NULL)) < 0)
-		goto done;
-
-done:
-	gitbench_run_finish_operation(run);
-	return error;
-}
-
 static int _do_core_setup(
 	git_buf *wd_path,
 	gitbench_benchmark_merge *benchmark,
@@ -106,76 +76,6 @@ static int _do_core_setup(
 
 	return error;
 }
-
-static int _do_lg2_merge(
-	gitbench_benchmark_merge *benchmark,
-	gitbench_run *run,
-	const char *wd)
-{
-	git_repository *repo = NULL;
-	git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
-	git_merge_options merge_opts = GIT_MERGE_OPTIONS_INIT;
-	git_annotated_commit *ac[1] = { NULL };
-	git_object *obj = NULL;
-	int error;
-
-	gitbench_run_start_operation(run, MERGE_OPERATION_LG2_MERGE);
-
-	if ((error = git_repository_open(&repo, wd)) < 0)
-		goto done;
-	if ((error = git_revparse_single(&obj, repo, benchmark->ref_name_merge)) < 0)
-		goto done;
-	if ((error = git_annotated_commit_lookup(&ac[0], repo, git_object_id(obj))) < 0)
-		goto done;
-
-	error = git_merge(repo, (const git_annotated_commit **)ac, 1,
-					  &merge_opts, &checkout_opts);
-
-done:
-	gitbench_run_finish_operation(run);
-	git_annotated_commit_free(ac[0]);
-	git_object_free(obj);
-	git_repository_free(repo);
-	return error;
-}
-
-static int _do_exe_merge(
-	gitbench_benchmark_merge *benchmark,
-	gitbench_run *run,
-	const char *wd)
-{
-	const char * argv[10] = {0};
-	int exit_status;
-	int result;
-	int k = 0;
-
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "merge";
-	argv[k++] = "--no-commit";
-	argv[k++] = "--quiet";
-	argv[k++] = benchmark->ref_name_merge;
-	argv[k++] = 0;
-
-	gitbench_run_start_operation(run, MERGE_OPERATION_EXE_MERGE);
-	result = gitbench_shell(argv, wd, &exit_status);
-	gitbench_run_finish_operation(run);
-
-	/* "git merge" exits with 1 when there are merge conflicts
-	 * OR when the target commit cannot be found.  (We get 128
-	 * or 129 for usage errors.)
-	 *
-	 * If we get a 1, assume a conflict.  This implies that
-	 * merge finished and we can continue with the timing.
-	 * So we ignore the sanitized result and key off the
-	 * actual exit status instead.
-	 */
-	if (exit_status == 1)
-		fprintf(gitbench_globals.logfile, "::::: git-merge.exe exited with 1; assuming conflicts\n");
-	if ((exit_status == 0) || (exit_status == 1))
-		return 0;
-	return result;
-}
-
 
 static int merge_run(gitbench_benchmark *b, gitbench_run *run)
 {
@@ -195,16 +95,15 @@ static int merge_run(gitbench_benchmark *b, gitbench_run *run)
 	if ((error = gitbench_util_set_mergelimit(wd_path.ptr)) < 0)
 		goto done;
 
-	if ((error = _init_exe_checkout(benchmark, run, wd_path.ptr)) < 0)
+	if ((error = gitbench_util_checkout__exe(run, wd_path.ptr, benchmark->ref_name_checkout, MERGE_OPERATION_EXE_CHECKOUT)) < 0)
 		goto done;
 
-	if (run->use_git_exe) {
-		if ((error = _do_exe_merge(benchmark, run, wd_path.ptr)) < 0)
-			goto done;
-	} else {
-		if ((error = _do_lg2_merge(benchmark, run, wd_path.ptr)) < 0)
-			goto done;
-	}
+	if (run->use_git_exe)
+		error = gitbench_util_merge__exe(run, wd_path.ptr, benchmark->ref_name_merge, MERGE_OPERATION_EXE_MERGE);
+	else
+		error = gitbench_util_merge__lg2(run, wd_path.ptr, benchmark->ref_name_merge, MERGE_OPERATION_LG2_MERGE);
+	if (error < 0)
+		goto done;
 
 	/* Always run both version of status since we can.
 	 * Note that there is probably a minor penalty for

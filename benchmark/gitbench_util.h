@@ -100,4 +100,28 @@ int gitbench_util_checkout__exe(
 	const char *ref,
 	int operation_id);
 
+/**
+ * Invoke "merge" using LG2.
+ * Merge WITHOUT commit.
+ * Record execution time under id.
+ * This routine performs a single "step" in an overall "benchmark".
+ */
+int gitbench_util_merge__lg2(
+	gitbench_run *run,
+	const char *wd,
+	const char *ref,
+	int operation_id);
+
+/**
+ * Invoke "merge" using GIT.EXE.
+ * Merge WITHOUT commit.
+ * Record execution time under id.
+ * This routine performs a single "step" in an overall "benchmark".
+ */
+int gitbench_util_merge__exe(
+	gitbench_run *run,
+	const char *wd,
+	const char *ref,
+	int operation_id);
+
 #endif

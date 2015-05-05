@@ -30,15 +30,13 @@ typedef struct gitbench_benchmark_clone {
 } gitbench_benchmark_clone;
 
 enum clone_operation_t {
-	CLONE_OPERATION_SETUP = 0,
-	CLONE_OPERATION_CLONE,
-	CLONE_OPERATION_CLEANUP
+	CLONE_OPERATION_EXE_CLONE = 0,
+	CLONE_OPERATION_LG2_CLONE,
 };
 
 static gitbench_operation_spec clone_operations[] = {
-	{ CLONE_OPERATION_SETUP,   "setup" },
-	{ CLONE_OPERATION_CLONE, "clone" },
-	{ CLONE_OPERATION_CLEANUP, "close" },
+	{ CLONE_OPERATION_EXE_CLONE, "ExeClone" },
+	{ CLONE_OPERATION_LG2_CLONE, "Lg2Clone" },
 };
 #define CLONE_OPERATIONS_COUNT (sizeof(clone_operations) / sizeof(clone_operations[0]))
 
@@ -50,26 +48,6 @@ static const gitbench_opt_spec clone_cmdline_opts[] = {
 	{ GITBENCH_OPT_SWITCH, "no-hardlinks",   0, "no-hardlinks", "no-hardlinks" },
 	{ 0 }
 };
-
-
-
-
-
-static int _time_clone(
-	gitbench_benchmark_clone *benchmark,
-	gitbench_run *run,
-	const char *wd)
-{
-	int error;
-
-	if (run->use_git_exe)
-		error = gitbench_util_clone__exe(run, benchmark->repo_path, wd, benchmark->bare, benchmark->local, CLONE_OPERATION_CLONE);
-	else
-		error = gitbench_util_clone__lg2(run, benchmark->repo_path, wd, benchmark->bare, benchmark->local, CLONE_OPERATION_CLONE);
-
-	return error;
-}
-
 
 static int _do_setup(
 	git_buf *wd_path,
@@ -88,31 +66,19 @@ static int _do_setup(
 	return error;
 }
 
-static int _time_setup(
-	git_buf *wd_path,
-	gitbench_benchmark_clone *benchmark,
-	gitbench_run *run)
-{
-	int error;
-
-	gitbench_run_start_operation(run, CLONE_OPERATION_SETUP);
-	error = _do_setup(wd_path, benchmark, run);
-	gitbench_run_finish_operation(run);
-
-	return error;
-}
-
-
 static int clone_run(gitbench_benchmark *b, gitbench_run *run)
 {
 	gitbench_benchmark_clone *benchmark = (gitbench_benchmark_clone *)b;
 	git_buf wd_path = GIT_BUF_INIT;
 	int error;
 
-	if ((error = _time_setup(&wd_path, benchmark, run)) < 0)
+	if ((error = _do_setup(&wd_path, benchmark, run)) < 0)
 		goto done;
 	
-	error = _time_clone(benchmark, run, wd_path.ptr);
+	if (run->use_git_exe)
+		error = gitbench_util_clone__exe(run, benchmark->repo_path, wd_path.ptr, benchmark->bare, benchmark->local, CLONE_OPERATION_EXE_CLONE);
+	else
+		error = gitbench_util_clone__lg2(run, benchmark->repo_path, wd_path.ptr, benchmark->bare, benchmark->local, CLONE_OPERATION_LG2_CLONE);
 
 done:
 	git_buf_free(&wd_path);
