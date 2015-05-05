@@ -11,6 +11,7 @@
 #include "common.h"
 #include "buffer.h"
 #include "fileops.h"
+#include "gitbench_globals.h"
 #include "gitbench_util.h"
 #include "gitbench_opt.h"
 #include "gitbench_run.h"
@@ -139,13 +140,13 @@ static int checkout_configure(
 
 	while (gitbench_opt_parser_next(&opt, &parser)) {
 		if (!opt.spec) {
-			fprintf(stderr, "%s: unknown argument: '%s'\n", progname, argv[parser.idx]);
-			gitbench_opt_usage_fprint(stderr, progname, checkout_cmdline_opts);
+			fprintf(stderr, "%s: unknown argument: '%s'\n", gitbench_globals.progname, argv[parser.idx]);
+			gitbench_opt_usage_fprint(stderr, gitbench_globals.progname, checkout_cmdline_opts);
 			return GITBENCH_EARGUMENTS;
 		}
 
 		if (strcmp(opt.spec->name, "help") == 0) {
-			gitbench_opt_usage_fprint(stderr, progname, checkout_cmdline_opts);
+			gitbench_opt_usage_fprint(stderr, gitbench_globals.progname, checkout_cmdline_opts);
 			return GITBENCH_EARGUMENTS;
 		} else if (strcmp(opt.spec->name, "repository") == 0) {
 			benchmark->repo_path = git__strdup(opt.value);
@@ -159,7 +160,7 @@ static int checkout_configure(
 	}
 
 	if (!benchmark->repo_path) {
-		gitbench_opt_usage_fprint(stderr, progname, checkout_cmdline_opts);
+		gitbench_opt_usage_fprint(stderr, gitbench_globals.progname, checkout_cmdline_opts);
 		return GITBENCH_EARGUMENTS;
 	}
 

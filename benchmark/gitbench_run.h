@@ -24,7 +24,6 @@ typedef struct {
 /** Specification for a benchmark command. */
 typedef struct {
 	size_t id;
-	int verbosity;
 
 	/* use git.exe for this run */
 	unsigned int use_git_exe:1;

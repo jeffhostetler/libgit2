@@ -11,6 +11,7 @@
 #include "common.h"
 #include "buffer.h"
 #include "fileops.h"
+#include "gitbench_globals.h"
 #include "gitbench_util.h"
 #include "gitbench_opt.h"
 #include "gitbench_run.h"
@@ -225,7 +226,7 @@ static int _do_exe_merge(
 	 * actual exit status instead.
 	 */
 	if (exit_status == 1)
-		fprintf(logfile, "::::: git-merge.exe exited with 1; assuming conflicts\n");
+		fprintf(gitbench_globals.logfile, "::::: git-merge.exe exited with 1; assuming conflicts\n");
 	if ((exit_status == 0) || (exit_status == 1))
 		return 0;
 	return result;
@@ -359,13 +360,13 @@ static int merge_configure(
 
 	while (gitbench_opt_parser_next(&opt, &parser)) {
 		if (!opt.spec) {
-			fprintf(stderr, "%s: unknown argument: '%s'\n", progname, argv[parser.idx]);
-			gitbench_opt_usage_fprint(stderr, progname, merge_cmdline_opts);
+			fprintf(stderr, "%s: unknown argument: '%s'\n", gitbench_globals.progname, argv[parser.idx]);
+			gitbench_opt_usage_fprint(stderr, gitbench_globals.progname, merge_cmdline_opts);
 			return GITBENCH_EARGUMENTS;
 		}
 
 		if (strcmp(opt.spec->name, "help") == 0) {
-			gitbench_opt_usage_fprint(stderr, progname, merge_cmdline_opts);
+			gitbench_opt_usage_fprint(stderr, gitbench_globals.progname, merge_cmdline_opts);
 			return GITBENCH_EARGUMENTS;
 		} else if (strcmp(opt.spec->name, "autocrlf") == 0) {
 			benchmark->autocrlf = 1;
@@ -382,8 +383,8 @@ static int merge_configure(
 			char *end;
 			long c = strtol(opt.value, &end, 10);
 			if (c <= 0 || *end) {
-				fprintf(stderr, "%s: invalid status count '%s'\n", progname, opt.value);
-				gitbench_opt_usage_fprint(stderr, progname, merge_cmdline_opts);
+				fprintf(stderr, "%s: invalid status count '%s'\n", gitbench_globals.progname, opt.value);
+				gitbench_opt_usage_fprint(stderr, gitbench_globals.progname, merge_cmdline_opts);
 				return GITBENCH_EARGUMENTS;
 			}
 			benchmark->status_count = c;
@@ -396,7 +397,7 @@ static int merge_configure(
 	if (!benchmark->repo_url ||
 		!benchmark->ref_name_checkout ||
 		!benchmark->ref_name_merge) {
-		gitbench_opt_usage_fprint(stderr, progname, merge_cmdline_opts);
+		gitbench_opt_usage_fprint(stderr, gitbench_globals.progname, merge_cmdline_opts);
 		return GITBENCH_EARGUMENTS;
 	}
 

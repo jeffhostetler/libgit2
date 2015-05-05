@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "fileops.h"
+#include "gitbench_globals.h"
 #include "gitbench_run.h"
 #include "gitbench_util.h"
 
@@ -53,8 +54,8 @@ int gitbench_run_start(gitbench_run *run)
 	if (gitbench_util_create_tempdir((char **)&run->tempdir) < 0)
 		return -1;
 
-	if (run->verbosity)
-		fprintf(logfile, ": Starting run %" PRIuZ "\n", run->id);
+	if (gitbench_globals.verbosity)
+		fprintf(gitbench_globals.logfile, ": Starting run %" PRIuZ "\n", run->id);
 
 	run->overall_start = git__timer();
 	return 0;
@@ -67,8 +68,8 @@ int gitbench_run_finish(gitbench_run *run)
 
 	run->overall_end = git__timer();
 
-	if (run->verbosity)
-		fprintf(logfile, ": Finished run %" PRIuZ "\n", run->id);
+	if (gitbench_globals.verbosity)
+		fprintf(gitbench_globals.logfile, ": Finished run %" PRIuZ "\n", run->id);
 
 	git_futils_rmdir_r(run->tempdir, NULL, GIT_RMDIR_REMOVE_FILES);
 
@@ -85,9 +86,9 @@ int gitbench_run_start_operation(gitbench_run *run, unsigned int opcode)
 
 	opdata = git_array_get(run->operation_data, opcode);
 
-	if (run->verbosity) {
+	if (gitbench_globals.verbosity) {
 		const char *type = "operation";
-		fprintf(logfile, "::: Starting %s: %s\n", type, opdata->spec->description);
+		fprintf(gitbench_globals.logfile, "::: Starting %s: %s\n", type, opdata->spec->description);
 	}
 
 	run->current_operation = opcode;
@@ -114,9 +115,9 @@ int gitbench_run_finish_operation(gitbench_run *run)
 
 	run->current_operation = RUN_OPERATION_NONE;
 
-	if (run->verbosity) {
+	if (gitbench_globals.verbosity) {
 		const char *type = "operation";
-		fprintf(logfile, "::: Finished %s: %s (total=%f seconds)\n",
+		fprintf(gitbench_globals.logfile, "::: Finished %s: %s (total=%f seconds)\n",
 			type, opdata->spec->description, (opdata->op_end - opdata->op_start));
 	}
 

@@ -11,14 +11,13 @@
 #include "vector.h"
 #include "path.h"
 
+#include "gitbench_globals.h"
 #include "gitbench_util.h"
 #include "gitbench_opt.h"
 #include "gitbench_benchmark.h"
 #include "gitbench_run.h"
 
-FILE *logfile = NULL;
-const char *progname;
-int verbosity = 0;
+struct gitbench_globals gitbench_globals = { NULL, NULL, 0 };
 
 static bool compare_with_git_exe = false;
 static int gitbench_init(void);
@@ -73,13 +72,12 @@ int main(int argc, const char **argv)
 	git_vector runs_git = GIT_VECTOR_INIT;
 	int error = 0;
 
-	logfile = stdout;
-
-	progname = gitbench_basename(argv[0]);
+	gitbench_globals.logfile = stdout;
+	gitbench_globals.progname = gitbench_basename(argv[0]);
 
 	gitbench_try(gitbench_init());
 
-	gitbench_try(git_vector_insert(&cmd_args, (char *)progname));
+	gitbench_try(git_vector_insert(&cmd_args, (char *)gitbench_globals.progname));
 
 	gitbench_opt_parser_init(&parser, gitbench_opts, argv + 1, argc - 1);
 
@@ -92,13 +90,13 @@ int main(int argc, const char **argv)
 		if (strcmp(opt.spec->name, "help") == 0) {
 			gitbench_try(git_vector_insert(&cmd_args, (char *)argv[parser.idx]));
 		} else if (strcmp(opt.spec->name, "verbose") == 0) {
-			verbosity++;
+			gitbench_globals.verbosity++;
 		} else if (strcmp(opt.spec->name, "git") == 0) {
 			compare_with_git_exe = true;
 		} else if (strcmp(opt.spec->name, "logfile") == 0) {
-			logfile = fopen(opt.value, "a");
-			if (logfile == NULL) {
-				fprintf(stderr, "%s: cannot open logfile '%s'\n", progname, opt.value);
+			gitbench_globals.logfile = fopen(opt.value, "a");
+			if (gitbench_globals.logfile == NULL) {
+				fprintf(stderr, "%s: cannot open logfile '%s'\n", gitbench_globals.progname, opt.value);
 				print_usage(stderr);
 				error = 1;
 				goto done;
@@ -109,7 +107,7 @@ int main(int argc, const char **argv)
 			long c = strtol(opt.value, &end, 10);
 
 			if (c <= 0 || *end) {
-				fprintf(stderr, "%s: invalid count '%s'\n'", progname, opt.value);
+				fprintf(stderr, "%s: invalid count '%s'\n'", gitbench_globals.progname, opt.value);
 				print_usage(stderr);
 				error = 1;
 				goto done;
@@ -138,11 +136,11 @@ int main(int argc, const char **argv)
 done:
 	if (error < 0) {
 		const git_error *err = giterr_last();
-		fprintf(stderr, "%s: %s\n", progname, err ? err->message : "unknown error");
+		fprintf(stderr, "%s: %s\n", gitbench_globals.progname, err ? err->message : "unknown error");
 
-		if (logfile != stdout) {
-			fprintf(logfile, "\n\n________________________________________________________________\n");
-			fprintf(logfile, "%s: %s\n", progname, err ? err->message : "unknown error");
+		if (gitbench_globals.logfile != stdout) {
+			fprintf(gitbench_globals.logfile, "\n\n________________________________________________________________\n");
+			fprintf(gitbench_globals.logfile, "%s: %s\n", gitbench_globals.progname, err ? err->message : "unknown error");
 		}
 	}
 
@@ -152,8 +150,10 @@ done:
 
 	gitbench_shutdown();
 
-	if (logfile)
-		fclose(logfile);
+	if (gitbench_globals.logfile) {
+		fclose(gitbench_globals.logfile);
+		gitbench_globals.logfile = NULL;
+	}
 	return error ? 1 : 0;
 }
 
@@ -185,7 +185,7 @@ int benchmark_init(gitbench_benchmark **out, const char *name, int argc, const c
 	}
 
 	if ((benchmark_spec = benchmark_spec_lookup(name)) == NULL) {
-		fprintf(stderr, "%s: unknown benchmark '%s'\n", progname, name);
+		fprintf(stderr, "%s: unknown benchmark '%s'\n", gitbench_globals.progname, name);
 		print_usage(stderr);
 		return GITBENCH_EARGUMENTS;
 	}
@@ -228,7 +228,6 @@ int benchmark_run(
 			benchmark->operations) < 0)
 			return -1;
 
-		run->verbosity = verbosity;
 		run->use_git_exe = use_git_exe;
 
 		if (git_vector_insert(runs, run) < 0)
@@ -251,13 +250,13 @@ static void report_logfile_header(int argc, const char **argv)
 {
 	int k;
 
-	fprintf(logfile, "\n");
-	fprintf(logfile, "################################################################\n");
-	fprintf(logfile, "%s", progname);
+	fprintf(gitbench_globals.logfile, "\n");
+	fprintf(gitbench_globals.logfile, "################################################################\n");
+	fprintf(gitbench_globals.logfile, "%s", gitbench_globals.progname);
 	for (k=1; k<argc; k++)
-		fprintf(logfile, " %s", argv[k]);
-	fprintf(logfile, "\n");
-	fprintf(logfile, "\n");
+		fprintf(gitbench_globals.logfile, " %s", argv[k]);
+	fprintf(gitbench_globals.logfile, "\n");
+	fprintf(gitbench_globals.logfile, "\n");
 }
 
 void report_benchmark(
@@ -276,11 +275,11 @@ void report_benchmark(
 
 	/* Column headers */
 
-	fprintf(logfile, "\n");
-	fprintf(logfile, "%-15s", label);
+	fprintf(gitbench_globals.logfile, "\n");
+	fprintf(gitbench_globals.logfile, "%-15s", label);
 	for (j = 0; j < benchmark->operation_cnt; j++)
-		fprintf(logfile, " %13s", benchmark->operations[j].description);
-	fprintf(logfile, " : %10s\n", "TOTAL");
+		fprintf(gitbench_globals.logfile, " %13s", benchmark->operations[j].description);
+	fprintf(gitbench_globals.logfile, " : %10s\n", "TOTAL");
 
 	/* Each run (--count x) */
 
@@ -290,17 +289,17 @@ void report_benchmark(
 
 		/* Data for each run */
 
-		fprintf(logfile, "%-15d", (int)(i+1));
+		fprintf(gitbench_globals.logfile, "%-15d", (int)(i+1));
 		for (j = 0; j < benchmark->operation_cnt; j++) {
 			if (run->operation_data.ptr[j].ran_count) {
 				/* We have data for this "column". */
 
 				double time_j = run->operation_data.ptr[j].op_sum;
-				fprintf(logfile, " %10.3f/", time_j);
+				fprintf(gitbench_globals.logfile, " %10.3f/", time_j);
 				if (run->operation_data.ptr[j].ran_count > 1)
-					fprintf(logfile, "%02d", run->operation_data.ptr[j].ran_count);
+					fprintf(gitbench_globals.logfile, "%02d", run->operation_data.ptr[j].ran_count);
 				else
-					fprintf(logfile, "__");
+					fprintf(gitbench_globals.logfile, "__");
 
 				tally[j] += time_j;
 				ran_op[j] += run->operation_data.ptr[j].ran_count;
@@ -309,56 +308,56 @@ void report_benchmark(
 					multiple = true;
 
 			} else {
-				fprintf(logfile, " %13s", " ");
+				fprintf(gitbench_globals.logfile, " %13s", " ");
 			}
 		}
-		fprintf(logfile, " : %10.3f\n", run_total);
+		fprintf(gitbench_globals.logfile, " : %10.3f\n", run_total);
 
 		tally[benchmark->operation_cnt] += run_total;
 
 		/* If any column in this row had a repeat count, report sub line with average. */
 
 		if (multiple) {
-			fprintf(logfile, "%15s", "(sub-avg)");
+			fprintf(gitbench_globals.logfile, "%15s", "(sub-avg)");
 			for (j = 0; j < benchmark->operation_cnt; j++) {
 				if (run->operation_data.ptr[j].ran_count > 1) {
 
 					double time_j = run->operation_data.ptr[j].op_sum;
 					double avg_j = (time_j / run->operation_data.ptr[j].ran_count);
-					fprintf(logfile, " %10.3f   ", avg_j);
+					fprintf(gitbench_globals.logfile, " %10.3f   ", avg_j);
 				} else {
-					fprintf(logfile, " %13s", " ");
+					fprintf(gitbench_globals.logfile, " %13s", " ");
 				}
 			}
-			fprintf(logfile, "\n");
+			fprintf(gitbench_globals.logfile, "\n");
 		}
 
-		fprintf(logfile, "\n");
+		fprintf(gitbench_globals.logfile, "\n");
 	}
 
 	/* Total of all runs */
 
-	fprintf(logfile, "%-15s", "Total");
+	fprintf(gitbench_globals.logfile, "%-15s", "Total");
 	for (j = 0; j < benchmark->operation_cnt; j++) {
 		if (ran_op[j])
-			fprintf(logfile, " %10.3f/%02d", tally[j], ran_op[j]);
+			fprintf(gitbench_globals.logfile, " %10.3f/%02d", tally[j], ran_op[j]);
 		else
-			fprintf(logfile, " %13s", " ");
+			fprintf(gitbench_globals.logfile, " %13s", " ");
 	}
-	fprintf(logfile, " : %10.3f\n", tally[benchmark->operation_cnt]);
-	fprintf(logfile, "\n");
+	fprintf(gitbench_globals.logfile, " : %10.3f\n", tally[benchmark->operation_cnt]);
+	fprintf(gitbench_globals.logfile, "\n");
 
 	/* Average of the runs */
 
-	fprintf(logfile, "%-15s", "Average");
+	fprintf(gitbench_globals.logfile, "%-15s", "Average");
 	for (j = 0; j < benchmark->operation_cnt; j++) {
 		if (ran_op[j])
-			fprintf(logfile, " %10.3f   ", (tally[j] / ran_op[j]));
+			fprintf(gitbench_globals.logfile, " %10.3f   ", (tally[j] / ran_op[j]));
 		else
-			fprintf(logfile, " %13s", " ");
+			fprintf(gitbench_globals.logfile, " %13s", " ");
 	}
-	fprintf(logfile, " : %10.3f\n", (tally[benchmark->operation_cnt] / count_runs));
-	fprintf(logfile, "\n");
+	fprintf(gitbench_globals.logfile, " : %10.3f\n", (tally[benchmark->operation_cnt] / count_runs));
+	fprintf(gitbench_globals.logfile, "\n");
 
 	git__free(tally);
 }
@@ -386,7 +385,7 @@ void print_usage(FILE *out)
 {
 	const gitbench_benchmark_spec *b;
 
-	gitbench_opt_usage_fprint(out, progname, gitbench_opts);
+	gitbench_opt_usage_fprint(out, gitbench_globals.progname, gitbench_opts);
 	fprintf(out, "\n");
 
 	fprintf(out, "Available benchmarks are:\n");
@@ -428,7 +427,7 @@ int help_adapter(gitbench_benchmark **out, int argc, const char **argv)
 
 	if (benchmark_init(&benchmark, benchmark_name, 2, help_args) == 0) {
 		fprintf(stderr, "%s: no help available for '%s'\n",
-				progname, benchmark_name);
+				gitbench_globals.progname, benchmark_name);
 		benchmark->free_fn(benchmark);
 	}
 

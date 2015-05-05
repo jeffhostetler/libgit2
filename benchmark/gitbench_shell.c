@@ -5,6 +5,7 @@
 #include "gitbench_util.h"
 #include "buffer.h"
 #include "fileops.h"
+#include "gitbench_globals.h"
 #include "gitbench_opt.h"
 #include "gitbench_run.h"
 #include "gitbench_operation.h"
@@ -36,8 +37,8 @@ extern int gitbench_shell(
 		git_buf_putc(&buf_cl, ' ');
 	}
 
-	if (verbosity)
-		fprintf(logfile, "::::: %s\n", buf_cl.ptr);
+	if (gitbench_globals.verbosity)
+		fprintf(gitbench_globals.logfile, "::::: %s\n", buf_cl.ptr);
 
 	if (!CreateProcessA(NULL, buf_cl.ptr, NULL, NULL, TRUE,
 						0, NULL, new_cwd, &si, &pi)) {

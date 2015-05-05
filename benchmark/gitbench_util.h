@@ -21,10 +21,6 @@
 
 #define GITBENCH_EARGUMENTS (INT_MIN+1)
 
-extern FILE *logfile;
-extern const char *progname;
-extern int verbosity;
-
 extern int gitbench_util_create_tempdir(char **out);
 
 #endif
