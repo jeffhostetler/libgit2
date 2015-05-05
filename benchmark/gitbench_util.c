@@ -9,6 +9,13 @@
 #include "common.h"
 #include "fileops.h"
 #include "buffer.h"
+#include "gitbench_globals.h"
+#include "gitbench_run.h"
+#include "gitbench_util.h"
+#include "gitbench_opt.h"
+#include "gitbench_shell.h"
+#include "gitbench_operation.h"
+#include "gitbench_benchmark.h"
 
 static int tempdir_isvalid(const char *path)
 {
@@ -71,3 +78,38 @@ done:
 	git_buf_free(&tempdir);
 	return error;
 }
+
+int gitbench_util_set_autocrlf(const char *wd, bool autocrlf)
+{
+	const char * argv[10] = {0};
+	int k;
+	int error;
+
+	k = 0;
+	argv[k++] = BM_GIT_EXE;
+	argv[k++] = "config";
+	argv[k++] = "core.autocrlf";
+	argv[k++] = ((autocrlf) ? "true" : "false");
+	argv[k++] = 0;
+
+	error = gitbench_shell(argv, wd, NULL);
+	return error;
+}
+
+int gitbench_util_set_mergelimit(const char *wd)
+{
+	const char * argv[10] = {0};
+	int k;
+	int error;
+
+	k = 0;
+	argv[k++] = BM_GIT_EXE;
+	argv[k++] = "config";
+	argv[k++] = "merge.renameLimit";
+	argv[k++] = "999999";
+	argv[k++] = 0;
+
+	error = gitbench_shell(argv, wd, NULL);
+	return error;
+}
+

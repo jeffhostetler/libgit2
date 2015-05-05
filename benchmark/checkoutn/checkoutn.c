@@ -62,47 +62,6 @@ static const gitbench_opt_spec checkoutn_cmdline_opts[] = {
 };
 
 
-/**
- * Clone the requested repo to TMP.
- * DO NOT let clone checkout the default HEAD.
- */
-static int _init_exe_clone(
-	gitbench_benchmark_checkoutn *benchmark,
-	gitbench_run *run,
-	const char *wd)
-{
-	const char * argv[10] = {0};
-	int k;
-	int error;
-
-	gitbench_run_start_operation(run, CHECKOUTN_OPERATION_EXE_CLONE);
-
-	k = 0;
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "clone";
-	argv[k++] = "--quiet";
-	argv[k++] = "--no-checkout";
-	argv[k++] = benchmark->repo_url;
-	argv[k++] = wd;
-	argv[k++] = 0;
-
-	if ((error = gitbench_shell(argv, NULL, NULL)) < 0)
-		goto done;
-
-	k = 0;
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "config";
-	argv[k++] = "core.autocrlf";
-	argv[k++] = ((benchmark->autocrlf) ? "true" : "false");
-	argv[k++] = 0;
-
-	if ((error = gitbench_shell(argv, wd, NULL)) < 0)
-		goto done;
-
-done:
-	gitbench_run_finish_operation(run);
-	return error;
-}
 
 
 static int _do_core_setup(
@@ -231,8 +190,10 @@ static int checkoutn_run(gitbench_benchmark *b, gitbench_run *run)
 	if ((error = _do_core_setup(&wd_path, benchmark, run)) < 0)
 		goto done;
 
-	// TODO Consider having lg2-based version of clone.
-	if ((error = _init_exe_clone(benchmark, run, wd_path.ptr)) < 0)
+	if ((error = gitbench_util_clone__exe(run, benchmark->repo_url, wd_path.ptr, CHECKOUTN_OPERATION_EXE_CLONE)) < 0)
+		goto done;
+
+	if ((error = gitbench_util_set_autocrlf(wd_path.ptr, benchmark->autocrlf)) < 0)
 		goto done;
 
 	if ((error = _do_checkoutn(benchmark, run, wd_path.ptr)) < 0)

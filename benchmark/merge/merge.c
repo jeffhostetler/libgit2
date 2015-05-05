@@ -62,61 +62,6 @@ static const gitbench_opt_spec merge_cmdline_opts[] = {
 	{ 0 }
 };
 
-
-/**
- * Clone the requested repo to TMP.
- * DO NOT let clone checkout the default HEAD.
- * Fix merge.renameLimit.
- */
-static int _init_exe_clone(
-	gitbench_benchmark_merge *benchmark,
-	gitbench_run *run,
-	const char *wd)
-{
-	const char * argv[10] = {0};
-	int k;
-	int error;
-
-	gitbench_run_start_operation(run, MERGE_OPERATION_EXE_CLONE);
-
-	k = 0;
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "clone";
-	argv[k++] = "--quiet";
-	argv[k++] = "--no-checkout";
-	argv[k++] = "--local";
-	argv[k++] = benchmark->repo_url;
-	argv[k++] = wd;
-	argv[k++] = 0;
-
-	if ((error = gitbench_shell(argv, NULL, NULL)) < 0)
-		goto done;
-
-	k = 0;
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "config";
-	argv[k++] = "core.autocrlf";
-	argv[k++] = ((benchmark->autocrlf) ? "true" : "false");
-	argv[k++] = 0;
-
-	if ((error = gitbench_shell(argv, wd, NULL)) < 0)
-		return error;
-
-	k = 0;
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "config";
-	argv[k++] = "merge.renameLimit";
-	argv[k++] = "999999";
-	argv[k++] = 0;
-
-	if ((error = gitbench_shell(argv, wd, NULL)) < 0)
-		goto done;
-
-done:
-	gitbench_run_finish_operation(run);
-	return error;
-}
-
 /**
  * Checkout the requested commit in detached head state.
  */
@@ -242,9 +187,15 @@ static int merge_run(gitbench_benchmark *b, gitbench_run *run)
 	if ((error = _do_core_setup(&wd_path, benchmark, run)) < 0)
 		goto done;
 
-	// TODO Consider having lg2-based version of clone and checkout.
-	if ((error = _init_exe_clone(benchmark, run, wd_path.ptr)) < 0)
+	if ((error = gitbench_util_clone__exe(run, benchmark->repo_url, wd_path.ptr, MERGE_OPERATION_EXE_CLONE)) < 0)
 		goto done;
+
+	if ((error = gitbench_util_set_autocrlf(wd_path.ptr, benchmark->autocrlf)) < 0)
+		goto done;
+
+	if ((error = gitbench_util_set_mergelimit(wd_path.ptr)) < 0)
+		goto done;
+
 	if ((error = _init_exe_checkout(benchmark, run, wd_path.ptr)) < 0)
 		goto done;
 
