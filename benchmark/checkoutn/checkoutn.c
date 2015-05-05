@@ -61,9 +61,6 @@ static const gitbench_opt_spec checkoutn_cmdline_opts[] = {
 	{ 0 }
 };
 
-
-
-
 static int _do_core_setup(
 	git_buf *wd_path,
 	gitbench_benchmark_checkoutn *benchmark,

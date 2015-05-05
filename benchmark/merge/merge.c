@@ -80,8 +80,7 @@ static int _init_exe_checkout(
 	argv[k++] = BM_GIT_EXE;
 	argv[k++] = "checkout";
 	argv[k++] = "--quiet";
-	argv[k++] = "-B";
-	argv[k++] = "bm";
+	argv[k++] = "--detach";
 	argv[k++] = benchmark->ref_name_checkout;
 	argv[k++] = 0;
 
