@@ -187,7 +187,7 @@ static int merge_run(gitbench_benchmark *b, gitbench_run *run)
 	if ((error = _do_core_setup(&wd_path, benchmark, run)) < 0)
 		goto done;
 
-	if ((error = gitbench_util_clone__exe(run, benchmark->repo_url, wd_path.ptr, MERGE_OPERATION_EXE_CLONE)) < 0)
+	if ((error = gitbench_util_clone__exe(run, benchmark->repo_url, wd_path.ptr, GIT_CLONE_LOCAL, false, MERGE_OPERATION_EXE_CLONE)) < 0)
 		goto done;
 
 	if ((error = gitbench_util_set_autocrlf(wd_path.ptr, benchmark->autocrlf)) < 0)

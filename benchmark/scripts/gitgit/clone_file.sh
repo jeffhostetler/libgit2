@@ -33,8 +33,11 @@ XX_USEGIT=--git
 ## we run the benchmark.
 bm_get_info >> $XX_LOG
 
-date
-time $BM_EXE $XX_VERBOSE -c $XX_COUNT --logfile $XX_LOG $XX_USEGIT clone $BM_FURL
+#### TODO Figure out git.exe default value for {local,no-local,no-hardlinks} and
+#### TODO make sure that we set the corresponding value in git_clone().
+#### date
+#### time $BM_EXE $XX_VERBOSE -c $XX_COUNT --logfile $XX_LOG $XX_USEGIT clone $BM_FURL
+
 date
 time $BM_EXE $XX_VERBOSE -c $XX_COUNT --logfile $XX_LOG $XX_USEGIT clone --local $BM_FURL
 date

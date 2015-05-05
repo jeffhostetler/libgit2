@@ -49,8 +49,21 @@ int gitbench_util_status__exe(
 	int status_repeat_count);
 
 /**
+ * Invoke "clone" using LG2.
+ * DO NOT CHECKOUT HEAD.
+ * Record execution time under id.
+ * This routine performs a single "step" in an overall "benchmark".
+ */
+int gitbench_util_clone__lg2(
+	gitbench_run *run,
+	const char *url,
+	const char *wd,
+	git_clone_local_t local,
+	bool bare,
+	int operation_id);
+
+/**
  * Invoke "clone" using GIT.EXE.
- * Clone is created in TMP.
  * DO NOT CHECKOUT HEAD.
  * Record execution time under id.
  * This routine performs a single "step" in an overall "benchmark".
@@ -59,7 +72,8 @@ int gitbench_util_clone__exe(
 	gitbench_run *run,
 	const char *url,
 	const char *wd,
+	git_clone_local_t local,
+	bool bare,
 	int operation_id);
-
 
 #endif

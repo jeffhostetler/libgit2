@@ -23,8 +23,6 @@ typedef struct gitbench_benchmark_clone {
 	gitbench_benchmark base;
 
 	char *repo_path;
-	char *username;
-	char *password;
 
 	git_clone_local_t local;
 	bool bare;
@@ -50,108 +48,12 @@ static const gitbench_opt_spec clone_cmdline_opts[] = {
 	{ GITBENCH_OPT_SWITCH, "local",          0, "local",        "local" },
 	{ GITBENCH_OPT_SWITCH, "no-local",       0, "no-local",     "no-local" },
 	{ GITBENCH_OPT_SWITCH, "no-hardlinks",   0, "no-hardlinks", "no-hardlinks" },
-	{ GITBENCH_OPT_VALUE,  "username",     'u', "username", "username", GITBENCH_OPT_USAGE_VALUE_REQUIRED },
-	{ GITBENCH_OPT_VALUE,  "password",     'p', "password", "password", GITBENCH_OPT_USAGE_VALUE_REQUIRED },
 	{ 0 }
 };
 
 
-/**
- * Supply credentials for the call to git_clone().
- * We use the optional command line args or the
- * environment variables.
- *
- * I don't like either of these methods, but I
- * don't want to hook up a credential helper right
- * now (and which may still prompt the user).
- *
- * This is only used by the libgit2 code; we don't
- * control what git.exe will do -- so to have a
- * fully automated test, you'll need to address
- * that separately.
- */
-static int cred_cb(
-	git_cred **cred,
-	const char *url,
-	const char *username_from_url,
-	unsigned int allowed_types,
-	void *payload)
-{
-	gitbench_benchmark_clone *benchmark = (gitbench_benchmark_clone *)payload;
-	const char *user;
-	const char *pass;
-
-	GIT_UNUSED(url);
-	GIT_UNUSED(allowed_types);
-
-	if (username_from_url)
-		user = username_from_url;
-	else if (benchmark->username)
-		user = benchmark->username;
-	else
-		user = getenv("BENCHMARK_USERNAME");
-
-	if (benchmark->password)
-		pass = benchmark->password;
-	else
-		pass = getenv("BENCHMARK_PASSWORD");
-
-	return git_cred_userpass_plaintext_new(cred, user, pass);
-}
 
 
-static int _do_clone(
-	gitbench_benchmark_clone *benchmark,
-	const char *wd)
-{
-	git_repository *repo = NULL;
-	git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
-	git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
-	git_remote_callbacks remote_callbacks = GIT_REMOTE_CALLBACKS_INIT;
-	int error;
-
-	checkout_opts.checkout_strategy = GIT_CHECKOUT_FORCE;
-
-	remote_callbacks.credentials = cred_cb;
-	remote_callbacks.payload = benchmark;
-
-	clone_opts.checkout_opts = checkout_opts;
-	clone_opts.remote_callbacks = remote_callbacks;
-	clone_opts.bare = benchmark->bare;
-	clone_opts.local = benchmark->local;
-	error = git_clone(&repo, benchmark->repo_path, wd, &clone_opts);
-
-	git_repository_free(repo);
-	return error;
-}
-
-static int _do_clone_using_git_exe(
-	gitbench_benchmark_clone *benchmark,
-	const char *wd)
-{
-	const char * argv[10] = {0};
-	int k = 0;
-
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "clone";
-	argv[k++] = "--quiet";
-
-	if (benchmark->bare)
-		argv[k++] = "--bare";
-
-	if (benchmark->local == GIT_CLONE_LOCAL)
-		argv[k++] = "--local";
-	else if (benchmark->local == GIT_CLONE_NO_LOCAL)
-		argv[k++] = "--no-local";
-	else if (benchmark->local == GIT_CLONE_LOCAL_NO_LINKS)
-		argv[k++] = "--no-hardlinks";
-
-	argv[k++] = benchmark->repo_path;
-	argv[k++] = wd;
-	argv[k++] = 0;
-
-	return gitbench_shell(argv, NULL, NULL);
-}
 
 static int _time_clone(
 	gitbench_benchmark_clone *benchmark,
@@ -160,12 +62,10 @@ static int _time_clone(
 {
 	int error;
 
-	gitbench_run_start_operation(run, CLONE_OPERATION_CLONE);
 	if (run->use_git_exe)
-		error = _do_clone_using_git_exe(benchmark, wd);
+		error = gitbench_util_clone__exe(run, benchmark->repo_path, wd, benchmark->bare, benchmark->local, CLONE_OPERATION_CLONE);
 	else
-		error = _do_clone(benchmark, wd);
-	gitbench_run_finish_operation(run);
+		error = gitbench_util_clone__lg2(run, benchmark->repo_path, wd, benchmark->bare, benchmark->local, CLONE_OPERATION_CLONE);
 
 	return error;
 }
@@ -227,8 +127,6 @@ static void clone_free(gitbench_benchmark *b)
 		return;
 
 	git__free(benchmark->repo_path);
-	git__free(benchmark->username);
-	git__free(benchmark->password);
 	git__free(benchmark);
 }
 
@@ -246,7 +144,12 @@ static int clone_configure(
 	 */
 	benchmark->local = GIT_CLONE_LOCAL_AUTO;
 
-	/* TODO decide if we want a "--bare" command line arg. */
+	/* For "clone" benchmark tests we always use "bare" because we
+	 * are only interested in the time to clone the contents of
+	 * the ".git" directory (and the various local/no-local/...
+	 * options).  We won't actually use the resulting repo, so it
+	 * doesn't matter if it is bare or not.
+	 */
 	benchmark->bare = true;
 
 	gitbench_opt_parser_init(&parser, clone_cmdline_opts, argv + 1, argc - 1);
@@ -264,13 +167,6 @@ static int clone_configure(
 		} else if (strcmp(opt.spec->name, "repository") == 0) {
 			benchmark->repo_path = git__strdup(opt.value);
 			GITERR_CHECK_ALLOC(benchmark->repo_path);
-		} else if (strcmp(opt.spec->name, "username") == 0) {
-			benchmark->username = git__strdup(opt.value);
-			GITERR_CHECK_ALLOC(benchmark->username);
-		} else if (strcmp(opt.spec->name, "password") == 0) {
-			benchmark->password = git__strdup(opt.value);
-			GITERR_CHECK_ALLOC(benchmark->password);
-
 		} else if (strcmp(opt.spec->name, "local") == 0) {
 			benchmark->local = GIT_CLONE_LOCAL;
 		} else if (strcmp(opt.spec->name, "no-local") == 0) {

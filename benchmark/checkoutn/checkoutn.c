@@ -190,7 +190,7 @@ static int checkoutn_run(gitbench_benchmark *b, gitbench_run *run)
 	if ((error = _do_core_setup(&wd_path, benchmark, run)) < 0)
 		goto done;
 
-	if ((error = gitbench_util_clone__exe(run, benchmark->repo_url, wd_path.ptr, CHECKOUTN_OPERATION_EXE_CLONE)) < 0)
+	if ((error = gitbench_util_clone__exe(run, benchmark->repo_url, wd_path.ptr, GIT_CLONE_LOCAL, false, CHECKOUTN_OPERATION_EXE_CLONE)) < 0)
 		goto done;
 
 	if ((error = gitbench_util_set_autocrlf(wd_path.ptr, benchmark->autocrlf)) < 0)
