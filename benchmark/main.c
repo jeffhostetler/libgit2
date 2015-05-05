@@ -12,10 +12,10 @@
 #include "path.h"
 
 #include "gitbench_globals.h"
+#include "gitbench_run.h"
 #include "gitbench_util.h"
 #include "gitbench_opt.h"
 #include "gitbench_benchmark.h"
-#include "gitbench_run.h"
 
 struct gitbench_globals gitbench_globals = { NULL, NULL, 0 };
 

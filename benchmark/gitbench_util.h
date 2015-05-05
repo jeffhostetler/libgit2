@@ -23,4 +23,17 @@
 
 extern int gitbench_util_create_tempdir(char **out);
 
+int gitbench_util_status__lg2(
+	gitbench_run *run,
+	const char *wd,
+	int operation_id,
+	int status_repeat_count);
+
+int gitbench_util_status__exe(
+	gitbench_run *run,
+	const char *wd,
+	int operation_id,
+	int status_repeat_count);
+
+
 #endif

@@ -12,9 +12,9 @@
 #include "buffer.h"
 #include "fileops.h"
 #include "gitbench_globals.h"
+#include "gitbench_run.h"
 #include "gitbench_util.h"
 #include "gitbench_opt.h"
-#include "gitbench_run.h"
 #include "gitbench_shell.h"
 #include "gitbench_operation.h"
 #include "gitbench_benchmark.h"
@@ -233,69 +233,6 @@ static int _do_exe_merge(
 }
 
 
-static int _do_lg2_status(
-	gitbench_benchmark_merge *benchmark,
-	gitbench_run *run,
-	const char *wd)
-{
-	git_repository *repo = NULL;
-	git_status_list *status = NULL;
-	git_status_options status_opts = GIT_STATUS_OPTIONS_INIT;
-	int error;
-	int x;
-
-	status_opts.show = GIT_STATUS_SHOW_INDEX_AND_WORKDIR;
-	status_opts.flags = GIT_STATUS_OPT_INCLUDE_UNTRACKED |
-		GIT_STATUS_OPT_RENAMES_HEAD_TO_INDEX;
-
-	if ((error = git_repository_open(&repo, wd)) < 0)
-		goto done;
-
-	for (x = 0; x < benchmark->status_count; x++) {
-		gitbench_run_start_operation(run, MERGE_OPERATION_LG2_STATUS);
-		error = git_status_list_new(&status, repo, &status_opts);
-		gitbench_run_finish_operation(run);
-		if (error < 0)
-			goto done;
-	}
-
-done:
-	gitbench_run_finish_operation(run);
-	git_status_list_free(status);
-	git_repository_free(repo);
-	return error;
-}
-
-static int _do_exe_status(
-	gitbench_benchmark_merge *benchmark,
-	gitbench_run *run,
-	const char *wd)
-{
-	const char * argv[10] = {0};
-	int k = 0;
-	int error;
-	int x;
-
-	argv[k++] = BM_GIT_EXE;
-	argv[k++] = "status";
-	argv[k++] = "--porcelain";
-	argv[k++] = "--branch";
-	argv[k++] = 0;
-
-	for (x = 0; x < benchmark->status_count; x++) {
-		gitbench_run_start_operation(run, MERGE_OPERATION_EXE_STATUS);
-		error = gitbench_shell(argv, wd, NULL);
-		gitbench_run_finish_operation(run);
-		if (error < 0)
-			goto done;
-	}
-
-done:
-	gitbench_run_finish_operation(run);
-	return error;
-}
-
-
 static int merge_run(gitbench_benchmark *b, gitbench_run *run)
 {
 	gitbench_benchmark_merge *benchmark = (gitbench_benchmark_merge *)b;
@@ -325,9 +262,9 @@ static int merge_run(gitbench_benchmark *b, gitbench_run *run)
 	 * the index. I'm going to average a few runs to smooth
 	 * this out.
 	 */
-	if ((error = _do_exe_status(benchmark, run, wd_path.ptr)) < 0)
+	if ((error = gitbench_util_status__exe(run, wd_path.ptr, MERGE_OPERATION_EXE_STATUS, benchmark->status_count)) < 0)
 		goto done;
-	if ((error = _do_lg2_status(benchmark, run, wd_path.ptr)) < 0)
+	if ((error = gitbench_util_status__lg2(run, wd_path.ptr, MERGE_OPERATION_LG2_STATUS, benchmark->status_count)) < 0)
 		goto done;
 
 done:
