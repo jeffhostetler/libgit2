@@ -58,7 +58,7 @@ static int _do_setup(
 
 	GIT_UNUSED(benchmark);
 
-	if ((error = git_buf_joinpath(wd_path, run->tempdir, "wd")) < 0)
+	if ((error = git_buf_joinpath(wd_path, run->buf_sandbox.ptr, "wd")) < 0)
 		return error;
 	if ((error = git_futils_mkdir(wd_path->ptr, NULL, 0700, GIT_MKDIR_VERIFY_DIR)) < 0)
 		return error;

@@ -51,7 +51,7 @@ int gitbench_run_start(gitbench_run *run)
 	assert(run);
 	assert(run->overall_start == 0);
 
-	if (gitbench_util_create_tempdir((char **)&run->tempdir) < 0)
+	if (gitbench_util_sandbox_create(&run->buf_sandbox) < 0)
 		return -1;
 
 	if (gitbench_globals.verbosity)
@@ -71,7 +71,7 @@ int gitbench_run_finish(gitbench_run *run)
 	if (gitbench_globals.verbosity)
 		fprintf(gitbench_globals.logfile, ": Finished run %" PRIuZ "\n", run->id);
 
-	git_futils_rmdir_r(run->tempdir, NULL, GIT_RMDIR_REMOVE_FILES);
+	git_futils_rmdir_r(run->buf_sandbox.ptr, NULL, GIT_RMDIR_REMOVE_FILES);
 
 	return 0;
 }
@@ -129,6 +129,6 @@ void gitbench_run_free(gitbench_run *run)
 	if (!run)
 		return;
 
-	git__free((char *)run->tempdir);
+	git_buf_free(&run->buf_sandbox);
 	git__free(run);
 }

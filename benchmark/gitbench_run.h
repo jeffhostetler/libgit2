@@ -28,7 +28,8 @@ typedef struct {
 	/* use git.exe for this run */
 	unsigned int use_git_exe:1;
 
-	const char *tempdir;
+	/* path to sandbox directory */
+	git_buf buf_sandbox;
 
 	/* start and end of the overall run */
 	double overall_start;

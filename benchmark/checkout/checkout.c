@@ -70,7 +70,7 @@ static int checkout_run(gitbench_benchmark *b, gitbench_run *run)
 	if ((error = git_repository_open(&repo, benchmark->repo_path)) < 0 ||
 		(error = git_reference_name_to_id(&id, repo, ref_name)) < 0 ||
 		(error = git_object_lookup(&obj, repo, &id, GIT_OBJ_ANY)) < 0 ||
-		(error = git_buf_joinpath(&wd_path, run->tempdir, "workdir")) < 0 ||
+		(error = git_buf_joinpath(&wd_path, run->buf_sandbox.ptr, "workdir")) < 0 ||
 		(error = git_futils_mkdir(wd_path.ptr, NULL, 0700, GIT_MKDIR_VERIFY_DIR)) < 0 ||
 		(error = git_repository_set_workdir(repo, wd_path.ptr, 0)) < 0 ||
 		(error = git_config_new(&config)) < 0) {
@@ -88,7 +88,7 @@ static int checkout_run(gitbench_benchmark *b, gitbench_run *run)
 	if (benchmark->autocrlf) {
 		gitbench_run_start_operation(run, CHECKOUT_OPERATION_SETUP_FILTERS);
 
-		if ((error = git_buf_joinpath(&config_path, run->tempdir, ".config")) == 0 &&
+		if ((error = git_buf_joinpath(&config_path, run->buf_sandbox.ptr, ".config")) == 0 &&
 			(error = git_config_add_file_ondisk(config, config_path.ptr, GIT_CONFIG_LEVEL_LOCAL, 0)) == 0)
 			error = git_config_set_bool(config, "core.autocrlf", true);
 

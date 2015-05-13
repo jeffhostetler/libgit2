@@ -20,7 +20,8 @@
 
 #define GITBENCH_EARGUMENTS (INT_MIN+1)
 
-extern int gitbench_util_create_tempdir(char **out);
+extern int gitbench_util_create_sandbox(git_buf *pbuf_sandbox);
+
 extern int gitbench_util_set_autocrlf(const char *wd, bool autocrlf);
 extern int gitbench_util_set_mergelimit(const char *wd);
 

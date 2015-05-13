@@ -10,7 +10,7 @@
 ## variables to avoid confusion (and cross-script contamination).
 ##################################################################
 
-set -vx
+set -x
 
 ## The name of the benchmark EXE.
 ##
@@ -21,24 +21,25 @@ if [ "`uname`" = "Linux" ]; then
 elif [ "`uname`" = "Darwin" ]; then
     export BM_EXE=../../../build/libgit2_bench
 else
-    export BM_EXE=../../../build/RelWithDebInfo/libgit2_bench.exe
+##    export BM_EXE=../../../build/RelWithDebInfo/libgit2_bench.exe
+    export BM_EXE=../../../build/Debug/libgit2_bench.exe
 fi
 
 
 ## Some repos have deep paths in them and our benchmarks inherit
-## and (at least on Windows) we need this to be as shallow as
-## possible.
+## and (at least on Windows) we want this to be as shallow as
+## possible. And we want to be able to choose alternate drives
+## for local cloning and etc.
+##
+## The EXE will call getenv() on this variable name.
 if [ "`uname`" = "Linux" ]; then
-    export BM_TEMP=/tmp
+    export GITBENCH_TEMP=/tmp
 elif [ "`uname`" = "Darwin" ]; then
-    export BM_TEMP=$TMPDIR
+    export GITBENCH_TEMP=$TMPDIR
 else
-    export BM_TEMP=C:/t
-    ## Force Windows GetTempPath() and friends to use this too.
-    export TMP=$BM_TEMP
-    export TEMP=$BM_TEMP
+    export GITBENCH_TEMP=C:/t
 fi
-[ -d $BM_TEMP ] || mkdir $BM_TEMP
+[ -d $GITBENCH_TEMP ] || mkdir $GITBENCH_TEMP
 
 
 ## Code name for tests based upon the repo we are testing with.
@@ -56,7 +57,7 @@ export BM_LABEL=`git branch | grep '*' | sed 's/\* //' | sed 's|/|__|g'`
 
 
 ## Place to accumulate output and logs.
-export BM_LOGS_DIR=$BM_TEMP/logs/$BM_LABEL/$BM_CODE
+export BM_LOGS_DIR=$GITBENCH_TEMP/logs/$BM_LABEL/$BM_CODE
 [ -d $BM_LOGS_DIR ] || mkdir -p $BM_LOGS_DIR
 
 
@@ -65,8 +66,8 @@ export BM_LOGS_DIR=$BM_TEMP/logs/$BM_LABEL/$BM_CODE
 ##
 ## We will try to clone this exactly once and re-use the repo on subsequent
 ## benchmark runs, so don't mess with it.
-export BM_LURL=$BM_TEMP/$BM_CODE
-export BM_FURL=file:///$BM_TEMP/$BM_CODE
+export BM_LURL=$GITBENCH_TEMP/$BM_CODE
+export BM_FURL=file:///$GITBENCH_TEMP/$BM_CODE
 
 
 date

@@ -3,9 +3,6 @@
 ## CD to this directory and run this script from here.
 ##################################################################
 
-set -vx
-
-
 . ./__setup.sh || exit 1
 
 
