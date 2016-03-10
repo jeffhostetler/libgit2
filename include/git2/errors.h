@@ -51,6 +51,7 @@ typedef enum {
 	GIT_EDIRECTORY      = -23,      /**< The operation is not valid for a directory */
 	GIT_EMERGECONFLICT  = -24,	/**< A merge conflict exists and cannot continue */
 
+	GIT_E_MSFT_LONGPATH = -29,  /**< MSFT-ADDED Internal error for 260+ path in diriter */
 	GIT_PASSTHROUGH     = -30,	/**< Internal only */
 	GIT_ITEROVER        = -31,	/**< Signals end of iteration with iterator */
 } git_error_code;

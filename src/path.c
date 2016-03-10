@@ -1167,7 +1167,7 @@ static int diriter_update_paths(git_path_diriter *diriter)
 		giterr_set(GITERR_FILESYSTEM,
 			"invalid path '%.*ls\\%ls' (path too long)",
 			diriter->parent_len, diriter->path, diriter->current.cFileName);
-		return -1;
+		return GIT_E_MSFT_LONGPATH;
 	}
 
 	diriter->path[diriter->parent_len] = L'\\';
@@ -1192,7 +1192,9 @@ static int diriter_update_paths(git_path_diriter *diriter)
 int git_path_diriter_next(git_path_diriter *diriter)
 {
 	bool skip_dot = !(diriter->flags & GIT_PATH_DIR_INCLUDE_DOT_AND_DOTDOT);
+	int error;
 
+TryAgain:
 	do {
 		/* Our first time through, we already have the data from
 		 * FindFirstFileW.  Use it, otherwise get the next file.
@@ -1203,10 +1205,19 @@ int git_path_diriter_next(git_path_diriter *diriter)
 			return GIT_ITEROVER;
 	} while (skip_dot && git_path_is_dot_or_dotdotW(diriter->current.cFileName));
 
-	if (diriter_update_paths(diriter) < 0)
-		return -1;
-
-	return 0;
+	error = diriter_update_paths(diriter);
+	if (error == GIT_E_MSFT_LONGPATH)
+	{
+		/* Silently eat pathnames on disk that are too long for certain
+		 * callers to handle. (I'm looking at you, C#/LibGit2Sharp.)
+		 * This is a bit of a lie, but the alternative is that status
+		 * will throw an error whenever there is a deep node_modules
+		 * hierarchy in the workdir (when include-ignored is passed).
+		 */
+		giterr_clear();
+		goto TryAgain;
+	}
+	return error;
 }
 
 int git_path_diriter_filename(
